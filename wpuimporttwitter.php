@@ -3,95 +3,111 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: http://github.com/Darklg/WPUtilities
-Version: 0.1
+Version: 0.2
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
 License URI: http://opensource.org/licenses/MIT
-Required plugins: WPU Post Types & Taxos, WPU Options
+Required plugins: WPU Post Types & Taxos
 */
 
 class WPUImportTwitter {
+
+    private $messages = array();
+
     function __construct() {
+        add_action('init', array(&$this,
+            'set_options'
+        ));
         add_action('init', array(&$this,
             'init'
         ));
     }
 
     function init() {
+
         add_filter('wputh_get_posttypes', array(&$this,
             'create_posttypes'
         ));
 
-        // Options
-        add_filter('wpu_options_tabs', array(&$this,
-            'set_options_tabs'
-        ) , 10, 3);
-        add_filter('wpu_options_boxes', array(&$this,
-            'set_options_boxes'
-        ) , 10, 3);
-        add_filter('wpu_options_fields', array(&$this,
-            'set_options_fields'
-        ) , 10, 3);
+        if (!is_admin()) {
+            return;
+        }
+
+        // Display notices
+        global $current_user;
+        $this->transient_msg = $current_user->ID . $this->options['plugin_id'];
+        add_action('wpuimporttwitter_admin_notices', array(&$this,
+            'admin_notices'
+        ));
+
+        // Settings & admin
+        add_action('admin_menu', array(&$this,
+            'admin_menu'
+        ));
+        add_action('admin_init', array(&$this,
+            'add_settings'
+        ));
+        add_filter("plugin_action_links_" . plugin_basename(__FILE__) , array(&$this,
+            'add_settings_link'
+        ));
+        add_action('admin_post_wpuimporttwitter_postaction', array(&$this,
+            'postAction'
+        ));
     }
 
-    function set_options_tabs($tabs) {
-        $tabs['wpuimporttwitter'] = array(
-            'name' => '[Plugin] Import Twitter'
+    function set_options() {
+        $this->options = array(
+            'plugin_publicname' => 'Twitter Import',
+            'plugin_name' => 'Twitter Import',
+            'plugin_userlevel' => 'manage_options',
+            'plugin_id' => 'wpuimporttwitter',
+            'plugin_pageslug' => 'wpuimporttwitter',
         );
-        return $tabs;
-    }
-
-    function set_options_boxes($boxes) {
-        $boxes['wpuimporttwitter_import'] = array(
-            'name' => 'Import settings',
-            'tab' => 'wpuimporttwitter'
+        $this->options['admin_url'] = admin_url('options-general.php?page=' . $this->options['plugin_id']);
+        $this->settings_details = array(
+            'option_id' => 'wpuimporttwitter_options',
+            'sections' => array(
+                'import' => array(
+                    'name' => __('Import Settings', 'wpuimporttwitter')
+                ) ,
+                'oauth' => array(
+                    'name' => __('Oauth Settings', 'wpuimporttwitter')
+                )
+            )
         );
-        $boxes['wpuimporttwitter_oauth'] = array(
-            'name' => 'Oauth settings',
-            'tab' => 'wpuimporttwitter'
+        $this->settings = array(
+            'screen_name' => array(
+                'label' => __('Screen name', 'wpuimporttwitter')
+            ) ,
+            'include_rts' => array(
+                'label' => __('Include RTs', 'wpuimporttwitter') ,
+                'label_check' => __('Include retweets from other accounts by this user.', 'wpuimporttwitter') ,
+                'type' => 'checkbox'
+            ) ,
+            'include_replies' => array(
+                'label' => __('Include Replies', 'wpuimporttwitter') ,
+                'label_check' => __('Include replies to other accounts by this user.', 'wpuimporttwitter') ,
+                'type' => 'checkbox'
+            ) ,
+            'oauth_access_token' => array(
+                'section' => 'oauth',
+                'label' => __('Access token', 'wpuimporttwitter') ,
+            ) ,
+            'oauth_access_token_secret' => array(
+                'section' => 'oauth',
+                'label' => __('Access token secret', 'wpuimporttwitter') ,
+            ) ,
+            'consumer_key' => array(
+                'section' => 'oauth',
+                'label' => __('Consumer key', 'wpuimporttwitter') ,
+            ) ,
+            'consumer_secret' => array(
+                'section' => 'oauth',
+                'label' => __('Consumer secret', 'wpuimporttwitter') ,
+            ) ,
         );
-        return $boxes;
-    }
-
-    function set_options_fields($options) {
-        $options['wpuimptwit_screen_name'] = array(
-            'label' => 'Screen name',
-            'box' => 'wpuimporttwitter_import',
-            'type' => 'text'
-        );
-        $options['wpuimptwit_include_replies'] = array(
-            'label' => 'Include replies',
-            'box' => 'wpuimporttwitter_import',
-            'type' => 'select'
-        );
-        $options['wpuimptwit_oauth_include_rts'] = array(
-            'label' => 'Include RTs',
-            'box' => 'wpuimporttwitter_import',
-            'type' => 'select'
-        );
-        $options['wpuimptwit_oauth_access_token'] = array(
-            'label' => 'Access token',
-            'box' => 'wpuimporttwitter_oauth',
-            'type' => 'text'
-        );
-        $options['wpuimptwit_oauth_access_token_secret'] = array(
-            'label' => 'Access token secret',
-            'box' => 'wpuimporttwitter_oauth',
-            'type' => 'text'
-        );
-        $options['wpuimptwit_consumer_key'] = array(
-            'label' => 'Consumer key',
-            'box' => 'wpuimporttwitter_oauth',
-            'type' => 'text'
-        );
-        $options['wpuimptwit_consumer_secret'] = array(
-            'label' => 'Consumer secret',
-            'box' => 'wpuimporttwitter_oauth',
-            'type' => 'text'
-        );
-        return $options;
     }
 
     function create_posttypes($post_types) {
@@ -113,14 +129,21 @@ class WPUImportTwitter {
         // Get ids from last imported tweets
         $imported_tweets_ids = $this->get_last_imported_tweets_ids();
 
+        $nb_imports = 0;
+
         // Exclude tweets already imported
         foreach ($last_tweets as $tweet) {
             if (!in_array($tweet['id'], $imported_tweets_ids)) {
 
                 // Create a post for each new tweet
-                $this->create_post_from_tweet($tweet);
+                $post_id = $this->create_post_from_tweet($tweet);
+                if (is_numeric($post_id) && $post_id > 0) {
+                    $nb_imports++;
+                }
             }
         }
+
+        return $nb_imports;
     }
 
     function get_last_imported_tweets_ids() {
@@ -132,11 +155,9 @@ class WPUImportTwitter {
                 'publish',
                 'pending',
                 'draft',
-                'auto-draft',
                 'future',
                 'private',
-                'inherit',
-                'trash'
+                'inherit'
             )
         ));
         foreach ($posts as $tweet) {
@@ -149,17 +170,13 @@ class WPUImportTwitter {
     }
 
     function get_last_tweets_for_user($screen_name = false) {
-        if ($screen_name == false) {
-            $screen_name = get_option('wpuimptwit_screen_name');
+        $settings = get_option('wpuimporttwitter_options');
+        if (!is_array($settings)) {
+            return false;
         }
-        $settings = array(
-            'oauth_access_token' => '',
-            'oauth_access_token_secret' => '',
-            'consumer_key' => '',
-            'consumer_secret' => '',
-        );
-        foreach ($settings as $id => $value) {
-            $settings[$id] = get_option('wpuimptwit_' . $id);
+
+        if ($screen_name == false) {
+            $screen_name = $settings['screen_name'];
         }
 
         /* Based on http://stackoverflow.com/a/16169848 by @budidino */
@@ -172,8 +189,8 @@ class WPUImportTwitter {
             'count' => 30
         );
 
-        $request['exclude_replies'] = (get_option('wpuimptwit_include_replies') != 1) ? 'true' : 'false';
-        $request['include_rts'] = (get_option('wpuimptwit_include_rts') == 1) ? 'true' : 'false';
+        $request['exclude_replies'] = ($settings['include_replies'] != 1) ? 'true' : 'false';
+        $request['include_rts'] = ($settings['include_rts'] == 1) ? 'true' : 'false';
 
         $oauth = array(
             'oauth_consumer_key' => $settings['consumer_key'],
@@ -248,7 +265,140 @@ class WPUImportTwitter {
         // Store metas
         add_post_meta($post_id, 'wpuimporttwitter_id', $tweet['id']);
         add_post_meta($post_id, 'wpuimporttwitter_screen_name', $tweet['screen_name']);
+
+        return $post_id;
     }
+
+    /* ----------------------------------------------------------
+      Admin
+    ---------------------------------------------------------- */
+
+    /* Settings link */
+
+    function add_settings_link($links) {
+        $settings_link = '<a href="' . $this->options['admin_url'] . '">' . __('Settings') . '</a>';
+        array_unshift($links, $settings_link);
+        return $links;
+    }
+
+    /* Menu */
+
+    function admin_menu() {
+        add_options_page($this->options['plugin_name'] . ' - ' . __('Settings') , $this->options['plugin_publicname'], $this->options['plugin_userlevel'], $this->options['plugin_pageslug'], array(&$this,
+            'admin_settings'
+        ) , '', 110);
+    }
+
+    /* Settings */
+
+    function postAction() {
+
+        if (isset($_POST['import_now'])) {
+            $nb_imports = $this->import();
+            if ($nb_imports > 0) {
+                $this->set_message(sprintf(__('Imported tweets : %s', 'wpuimporttwitter') , $nb_imports));
+            }
+            else {
+                $this->set_message(__('No new imports', 'wpuimporttwitter') , 'created');
+            }
+        }
+
+        if (isset($_POST['test_api'])) {
+
+            $last_tweets = $this->get_last_tweets_for_user();
+
+            if (is_array($last_tweets) && !empty($last_tweets)) {
+                $this->set_message(__('The API works great !', 'wpuimporttwitter') , 'created');
+            }
+            else {
+                $this->set_message(__('The credentials seems invalid or the user never tweeted.', 'wpuimporttwitter') , 'error');
+            }
+        }
+
+        wp_safe_redirect(wp_get_referer());
+        die();
+    }
+
+    function admin_settings() {
+        echo '<div class="wrap"><h1>' . get_admin_page_title() . '</h1>';
+        do_action('wpuimporttwitter_admin_notices');
+        echo '<hr />';
+        echo '<h2>' . __('Tools') . '</h2>';
+        echo '<form action="' . admin_url('admin-post.php') . '" method="post">';
+        echo '<input type="hidden" name="action" value="wpuimporttwitter_postaction">';
+        echo '<p class="submit">';
+        submit_button(__('Import now', 'wpuimporttwitter') , 'primary', 'import_now', false);
+        echo ' ';
+        submit_button(__('Test API', 'wpuimporttwitter') , 'primary', 'test_api', false);
+        echo '</p>';
+        echo '</form>';
+        echo '<hr />';
+        echo '<h2>' . __('Settings') . '</h2>';
+        echo '<form action="' . admin_url('options.php') . '" method="post">';
+        settings_fields($this->settings_details['option_id']);
+        do_settings_sections($this->options['plugin_id']);
+        echo submit_button(__('Save Changes', 'wpuimporttwitter'));
+        echo '</form>';
+        echo '</div>';
+    }
+
+    /* ----------------------------------------------------------
+      Plugin Settings
+    ---------------------------------------------------------- */
+
+    function add_settings() {
+        register_setting($this->settings_details['option_id'], $this->settings_details['option_id'], array(&$this,
+            'options_validate'
+        ));
+        $default_section = key($this->settings_details['sections']);
+        foreach ($this->settings_details['sections'] as $id => $section) {
+            add_settings_section($id, $section['name'], '', $this->options['plugin_id']);
+        }
+
+        foreach ($this->settings as $id => $input) {
+            $label = isset($input['label']) ? $input['label'] : '';
+            $label_check = isset($input['label_check']) ? $input['label_check'] : '';
+            $type = isset($input['type']) ? $input['type'] : 'text';
+            $section = isset($input['section']) ? $input['section'] : $default_section;
+            add_settings_field($id, $label, array(&$this,
+                'render__field'
+            ) , $this->options['plugin_id'], $section, array(
+                'name' => 'wpuimporttwitter_options[' . $id . ']',
+                'id' => $id,
+                'label_for' => $id,
+                'type' => $type,
+                'label_check' => $label_check
+            ));
+        }
+    }
+
+    function options_validate($input) {
+        $options = get_option($this->settings_details['option_id']);
+        foreach ($this->settings as $id => $name) {
+            $options[$id] = esc_html(trim($input[$id]));
+        }
+        return $options;
+    }
+
+    function render__field($args = array()) {
+        $options = get_option($this->settings_details['option_id']);
+        $label_check = isset($args['label_check']) ? $args['label_check'] : '';
+        $type = isset($args['type']) ? $args['type'] : 'text';
+        $name = ' name="wpuimporttwitter_options[' . $args['id'] . ']" ';
+        $id = ' id="' . $args['id'] . '" ';
+
+        switch ($type) {
+            case 'checkbox':
+                echo '<label><input type="checkbox" ' . $name . ' ' . $id . ' ' . checked($options[$args['id']], '1', 0) . ' value="1" /> ' . $label_check . '</label>';
+            break;
+            default:
+                echo '<input ' . $name . ' ' . $id . ' type="' . $type . '" value="' . esc_attr($options[$args['id']]) . '" />';
+        }
+    }
+
+    /* ----------------------------------------------------------
+      Twitter API Utils
+    ---------------------------------------------------------- */
 
     function buildBaseString($baseURI, $method, $params) {
         $r = array();
@@ -266,6 +416,46 @@ class WPUImportTwitter {
         $r.= implode(', ', $values);
         return $r;
     }
+
+    /* ----------------------------------------------------------
+      Messages
+    ---------------------------------------------------------- */
+
+    /* Set notices messages */
+    private function set_message($message, $group = false) {
+        $groups = array(
+            'updated',
+            'error'
+        );
+        if (!in_array($group, $groups)) {
+            $group = $groups[0];
+        }
+        $messages = (array)get_transient($this->transient_msg);
+
+        $messages[$group][] = $message;
+        set_transient($this->transient_msg, $messages);
+    }
+
+    /* Display notices */
+    function admin_notices() {
+        $messages = (array)get_transient($this->transient_msg);
+        if (!empty($messages)) {
+            foreach ($messages as $group_id => $group) {
+                if (is_array($group)) {
+                    foreach ($group as $message) {
+                        echo '<div class="' . $group_id . '"><p>' . $message . '</p></div>';
+                    }
+                }
+            }
+        }
+
+        // Empty messages
+        delete_transient($this->transient_msg);
+    }
+
+    /* ----------------------------------------------------------
+      Activation
+    ---------------------------------------------------------- */
 
     function install() {
         wp_schedule_event(time() , 'hourly', 'wpuimporttwitter__cron_hook');

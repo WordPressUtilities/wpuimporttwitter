@@ -31,6 +31,10 @@ Special Thanks :
 TODO
 ---
 
-* [_] Remove plugin dependencies.
-* [_] Add an "import now" button.
-* [_] Add a way to test the Twitter credentials.
+* [*] Remove WPU Options dependency.
+* [*] Add an "import now" button.
+* [*] Add a way to test the Twitter credentials.
+* [ ] Translation.
+* [ ] Convert t.co urls.
+* [ ] Import attachments.
+* [ ] Add a help link to twitter developper website.
