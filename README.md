@@ -9,7 +9,6 @@ How to install :
 
 * Put this folder to your wp-content/plugins/ folder.
 * Activate the plugin in "Plugins" admin section.
-* Install & activate the plugin WPUOptions, required to update plugin settings https://github.com/WordPressUtilities/wpuoptions
 * Install & activate the plugin WPU Post types & taxonomies, required to add taxonomies https://github.com/WordPressUtilities/wpuposttypestaxos
 
 
@@ -31,10 +30,16 @@ Special Thanks :
 TODO
 ---
 
-* [*] Remove WPU Options dependency.
-* [*] Add an "import now" button.
-* [*] Add a way to test the Twitter credentials.
+* [x] Remove WPU Options dependency.
+* [x] Add an "import now" button.
+* [x] Add a way to test the Twitter credentials.
+* [x] Setting to import as Draft.
+* [x] Convert t.co urls.
+* [x] Links in tweets ( t.co, @username, #hashtags ).
 * [ ] Translation.
-* [ ] Convert t.co urls.
 * [ ] Import attachments.
 * [ ] Add a help link to twitter developper website.
+* [ ] Clean title from URLs before crop.
+* [ ] Store original tweet link.
+* [ ] Hide "test" & "import" if no token values.
+* [ ] Edit stored values with WPU Post metas.

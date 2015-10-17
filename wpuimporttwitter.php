@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: http://github.com/Darklg/WPUtilities
-Version: 0.2
+Version: 0.3
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -13,7 +13,7 @@ Required plugins: WPU Post Types & Taxos
 */
 
 class WPUImportTwitter {
-
+    private $debug = false;
     private $messages = array();
 
     function __construct() {
@@ -89,6 +89,11 @@ class WPUImportTwitter {
             'include_replies' => array(
                 'label' => __('Include Replies', 'wpuimporttwitter') ,
                 'label_check' => __('Include replies to other accounts by this user.', 'wpuimporttwitter') ,
+                'type' => 'checkbox'
+            ) ,
+            'import_draft' => array(
+                'label' => __('Import as Draft', 'wpuimporttwitter') ,
+                'label_check' => __('Import tweet as Draft, to allow moderation.', 'wpuimporttwitter') ,
                 'type' => 'checkbox'
             ) ,
             'oauth_access_token' => array(
@@ -170,7 +175,7 @@ class WPUImportTwitter {
     }
 
     function get_last_tweets_for_user($screen_name = false) {
-        $settings = get_option('wpuimporttwitter_options');
+        $settings = get_option($this->settings_details['option_id']);
         if (!is_array($settings)) {
             return false;
         }
@@ -186,7 +191,8 @@ class WPUImportTwitter {
         // Create request
         $request = array(
             'screen_name' => $screen_name,
-            'count' => 30
+            'contributor_details' => 'false',
+            'count' => 50
         );
 
         $request['exclude_replies'] = ($settings['include_replies'] != 1) ? 'true' : 'false';
@@ -220,10 +226,24 @@ class WPUImportTwitter {
             CURLOPT_SSL_VERIFYPEER => false
         );
 
-        $feed = curl_init();
-        curl_setopt_array($feed, $options);
-        $response = curl_exec($feed);
-        curl_close($feed);
+        $debug_file = ABSPATH . '/tweets.txt';
+
+        $response = false;
+        if ($this->debug && file_exists($debug_file)) {
+            error_log('Using debug file');
+            $response = file_get_contents($debug_file);
+        }
+
+        if (!$response) {
+            $feed = curl_init();
+            curl_setopt_array($feed, $options);
+            $response = curl_exec($feed);
+            curl_close($feed);
+            if ($this->debug) {
+                error_log('Caching in debug file');
+                file_put_contents($debug_file, $response);
+            }
+        }
 
         return $this->get_tweets_from_response($response);
     }
@@ -242,7 +262,8 @@ class WPUImportTwitter {
                 'id' => $tweet->id,
                 'text' => $tweet->text,
                 'screen_name' => $tweet->user->screen_name,
-                'time' => strtotime($tweet->created_at)
+                'time' => strtotime($tweet->created_at) ,
+                'entities' => $tweet->entities,
             );
         }
         return $tweets;
@@ -250,9 +271,18 @@ class WPUImportTwitter {
 
     function create_post_from_tweet($tweet) {
 
+        $tweet_text = $this->apply_entities($tweet['text'], $tweet['entities']);
+
+        $settings = get_option($this->settings_details['option_id']);
+
+        $post_status = 'publish';
+        if (is_array($settings) && isset($settings['import_draft']) && $settings['import_draft'] == '1') {
+            $post_status = 'draft';
+        }
+
         $tweet_post = array(
             'post_title' => substr($tweet['text'], 0, 50) ,
-            'post_content' => $tweet['text'],
+            'post_content' => $tweet_text,
             'post_date' => date('Y-m-d H:i:s', $tweet['time']) ,
             'post_status' => 'publish',
             'post_author' => 1,
@@ -265,8 +295,35 @@ class WPUImportTwitter {
         // Store metas
         add_post_meta($post_id, 'wpuimporttwitter_id', $tweet['id']);
         add_post_meta($post_id, 'wpuimporttwitter_screen_name', $tweet['screen_name']);
+        add_post_meta($post_id, 'wpuimporttwitter_original_tweet', $tweet['text']);
 
         return $post_id;
+    }
+
+    function apply_entities($text, $entities) {
+
+        // Urls
+        if (!empty($entities->urls)) {
+            foreach ($entities->urls as $url) {
+                $text = str_replace($url->url, '<a class="twitter-link" href="' . $url->expanded_url . '">' . $url->display_url . '</a>', $text);
+            }
+        }
+
+        // Hashtags
+        if (!empty($entities->hashtags)) {
+            foreach ($entities->hashtags as $hashtag) {
+                $text = str_ireplace('#' . $hashtag->text, '<a class="twitter-hashtags" href="https://twitter.com/hashtag/' . $hashtag->text . '?src=hash">#' . $hashtag->text . '</a>', $text);
+            }
+        }
+
+        // Users
+        if (!empty($entities->user_mentions)) {
+            foreach ($entities->user_mentions as $user_mention) {
+                $text = str_ireplace('@' . $user_mention->screen_name, '<a class="twitter-users" href="https://twitter.com/' . $user_mention->screen_name . '" title="' . $user_mention->name . '">@' . $user_mention->screen_name . '</a>', $text);
+            }
+        }
+
+        return $text;
     }
 
     /* ----------------------------------------------------------
@@ -363,7 +420,7 @@ class WPUImportTwitter {
             add_settings_field($id, $label, array(&$this,
                 'render__field'
             ) , $this->options['plugin_id'], $section, array(
-                'name' => 'wpuimporttwitter_options[' . $id . ']',
+                'name' => $this->settings_details['option_id'] . '[' . $id . ']',
                 'id' => $id,
                 'label_for' => $id,
                 'type' => $type,
