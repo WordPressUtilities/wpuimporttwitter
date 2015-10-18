@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: http://github.com/Darklg/WPUtilities
-Version: 0.3
+Version: 0.4
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -176,7 +176,7 @@ class WPUImportTwitter {
 
     function get_last_tweets_for_user($screen_name = false) {
         $settings = get_option($this->settings_details['option_id']);
-        if (!is_array($settings)) {
+        if (!$this->test_correct_oauth_values()) {
             return false;
         }
 
@@ -248,6 +248,26 @@ class WPUImportTwitter {
         return $this->get_tweets_from_response($response);
     }
 
+    function test_correct_oauth_values() {
+        $settings = get_option($this->settings_details['option_id']);
+        if (!is_array($settings)) {
+            return false;
+        }
+        $test_settings_ids = array(
+            'oauth_access_token',
+            'oauth_access_token_secret',
+            'consumer_key',
+            'consumer_secret',
+            'screen_name'
+        );
+        foreach ($test_settings_ids as $id) {
+            if (!isset($settings[$id]) || empty($settings[$id])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     function get_tweets_from_response($json_response) {
         $tweets = array();
         $response = json_decode($json_response);
@@ -295,6 +315,7 @@ class WPUImportTwitter {
         // Store metas
         add_post_meta($post_id, 'wpuimporttwitter_id', $tweet['id']);
         add_post_meta($post_id, 'wpuimporttwitter_screen_name', $tweet['screen_name']);
+        add_post_meta($post_id, 'wpuimporttwitter_original_url', 'https://twitter.com/statuses/' . $tweet['id']);
         add_post_meta($post_id, 'wpuimporttwitter_original_tweet', $tweet['text']);
 
         return $post_id;
@@ -377,19 +398,25 @@ class WPUImportTwitter {
     }
 
     function admin_settings() {
+
         echo '<div class="wrap"><h1>' . get_admin_page_title() . '</h1>';
         do_action('wpuimporttwitter_admin_notices');
         echo '<hr />';
-        echo '<h2>' . __('Tools') . '</h2>';
-        echo '<form action="' . admin_url('admin-post.php') . '" method="post">';
-        echo '<input type="hidden" name="action" value="wpuimporttwitter_postaction">';
-        echo '<p class="submit">';
-        submit_button(__('Import now', 'wpuimporttwitter') , 'primary', 'import_now', false);
-        echo ' ';
-        submit_button(__('Test API', 'wpuimporttwitter') , 'primary', 'test_api', false);
-        echo '</p>';
-        echo '</form>';
-        echo '<hr />';
+
+        if ($this->test_correct_oauth_values()) {
+
+            echo '<h2>' . __('Tools') . '</h2>';
+            echo '<form action="' . admin_url('admin-post.php') . '" method="post">';
+            echo '<input type="hidden" name="action" value="wpuimporttwitter_postaction">';
+            echo '<p class="submit">';
+            submit_button(__('Import now', 'wpuimporttwitter') , 'primary', 'import_now', false);
+            echo ' ';
+            submit_button(__('Test API', 'wpuimporttwitter') , 'primary', 'test_api', false);
+            echo '</p>';
+            echo '</form>';
+            echo '<hr />';
+        }
+
         echo '<h2>' . __('Settings') . '</h2>';
         echo '<form action="' . admin_url('options.php') . '" method="post">';
         settings_fields($this->settings_details['option_id']);
@@ -517,12 +544,31 @@ class WPUImportTwitter {
     function install() {
         wp_schedule_event(time() , 'hourly', 'wpuimporttwitter__cron_hook');
     }
+
+    function deactivation() {
+        wp_clear_scheduled_hook('wpuimporttwitter__cron_hook');
+    }
+
+    /* ----------------------------------------------------------
+      Uninstall
+    ---------------------------------------------------------- */
+
+    function uninstall() {
+        delete_option($this->settings_details['option_id']);
+        delete_post_meta_by_key('wpuimporttwitter_id');
+        delete_post_meta_by_key('wpuimporttwitter_screen_name');
+        delete_post_meta_by_key('wpuimporttwitter_original_url');
+        delete_post_meta_by_key('wpuimporttwitter_original_tweet');
+    }
 }
 
 $WPUImportTwitter = new WPUImportTwitter();
 
 register_activation_hook(__FILE__, array(&$WPUImportTwitter,
     'install'
+));
+register_deactivation_hook(__FILE__, array(&$WPUImportTwitter,
+    'deactivation'
 ));
 
 add_action('wpuimporttwitter__cron_hook', 'wpuimporttwitter__import');

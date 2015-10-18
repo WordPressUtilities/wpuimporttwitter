@@ -36,10 +36,10 @@ TODO
 * [x] Setting to import as Draft.
 * [x] Convert t.co urls.
 * [x] Links in tweets ( t.co, @username, #hashtags ).
+* [x] Hide "test" & "import" if no token values.
+* [x] Store original tweet link.
 * [ ] Translation.
 * [ ] Import attachments.
 * [ ] Add a help link to twitter developper website.
 * [ ] Clean title from URLs before crop.
-* [ ] Store original tweet link.
-* [ ] Hide "test" & "import" if no token values.
 * [ ] Edit stored values with WPU Post metas.
