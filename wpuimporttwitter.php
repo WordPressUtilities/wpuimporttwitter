@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: http://github.com/Darklg/WPUtilities
-Version: 0.4.1
+Version: 0.5
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -292,6 +292,16 @@ class WPUImportTwitter {
     function create_post_from_tweet($tweet) {
 
         $tweet_text = $this->apply_entities($tweet['text'], $tweet['entities']);
+        $tweet_title = substr(strip_tags($tweet_text) , 0, 50);
+
+        $medias = array();
+        if (count($tweet['entities']->media) > 0) {
+            foreach ($tweet['entities']->media as $media) {
+                if ($media->type == 'photo') {
+                    $medias[] = $media->media_url;
+                }
+            }
+        }
 
         $settings = get_option($this->settings_details['option_id']);
 
@@ -301,7 +311,7 @@ class WPUImportTwitter {
         }
 
         $tweet_post = array(
-            'post_title' => substr($tweet['text'], 0, 50) ,
+            'post_title' => $tweet_title,
             'post_content' => $tweet_text,
             'post_date' => date('Y-m-d H:i:s', $tweet['time']) ,
             'post_status' => 'publish',
@@ -318,7 +328,37 @@ class WPUImportTwitter {
         add_post_meta($post_id, 'wpuimporttwitter_original_url', 'https://twitter.com/statuses/' . $tweet['id']);
         add_post_meta($post_id, 'wpuimporttwitter_original_tweet', $tweet['text']);
 
+        $this->import_medias($post_id, $medias);
+
         return $post_id;
+    }
+
+    function import_medias($post_id, $medias = array()) {
+        if (empty($medias)) {
+            return;
+        }
+
+        // Add required classes
+        require_once (ABSPATH . 'wp-admin/includes/media.php');
+        require_once (ABSPATH . 'wp-admin/includes/file.php');
+        require_once (ABSPATH . 'wp-admin/includes/image.php');
+
+        // Upload medias
+        foreach ($medias as $media) {
+            $image = media_sideload_image($media, $post_id);
+        }
+
+        // then find the last image added to the post attachments
+        $attachments = get_posts(array(
+            'numberposts' => 1,
+            'post_parent' => $post_id,
+            'post_type' => 'attachment',
+            'post_mime_type' => 'image'
+        ));
+
+        if (sizeof($attachments) > 0) {
+            set_post_thumbnail($post_id, $attachments[0]->ID);
+        }
     }
 
     function apply_entities($text, $entities) {
@@ -341,6 +381,13 @@ class WPUImportTwitter {
         if (!empty($entities->user_mentions)) {
             foreach ($entities->user_mentions as $user_mention) {
                 $text = str_ireplace('@' . $user_mention->screen_name, '<a class="twitter-users" href="https://twitter.com/' . $user_mention->screen_name . '" title="' . $user_mention->name . '">@' . $user_mention->screen_name . '</a>', $text);
+            }
+        }
+
+        // Medias
+        if (!empty($entities->media)) {
+            foreach ($entities->media as $media) {
+                $text = str_replace($media->url, '<a class="twitter-link" href="' . $media->expanded_url . '">' . $media->display_url . '</a>', $text);
             }
         }
 
