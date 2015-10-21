@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: http://github.com/Darklg/WPUtilities
-Version: 0.4
+Version: 0.4.1
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -121,7 +121,7 @@ class WPUImportTwitter {
             'name' => 'Tweet',
             'plural' => 'Tweets',
             'female' => 0,
-            'wputh__hide_front' => 1
+            'wputh__hide_front' => true
         );
         return $post_types;
     }
