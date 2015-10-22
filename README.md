@@ -3,6 +3,14 @@ WPU Import Twitter
 
 A WordPress plugin to import the latest tweets for an account. MIT License.
 
+Features :
+---
+
+* Import in a custom post type "tweets".
+* Import attached pictures.
+* Use a cron to import automatically every hour, or use a button to import now.
+* Import as "Published", or as "Draft" to select displayed tweets.
+
 
 How to install :
 ---
@@ -39,8 +47,9 @@ TODO
 * [x] Hide "test" & "import" if no token values.
 * [x] Store original tweet link.
 * [x] Import pictures.
+* [x] Clean title from URLs before crop.
+* [x] Admin front visibility.
 * [ ] Import smilies.
 * [ ] Translation.
 * [ ] Add a help link to twitter developper website.
-* [ ] Clean title from URLs before crop.
 * [ ] Edit stored values with WPU Post metas.

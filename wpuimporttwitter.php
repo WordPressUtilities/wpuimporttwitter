@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: http://github.com/Darklg/WPUtilities
-Version: 0.5
+Version: 0.6
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -65,7 +65,6 @@ class WPUImportTwitter {
             'plugin_id' => 'wpuimporttwitter',
             'plugin_pageslug' => 'wpuimporttwitter',
         );
-        $this->options['admin_url'] = admin_url('options-general.php?page=' . $this->options['plugin_id']);
         $this->settings_details = array(
             'option_id' => 'wpuimporttwitter_options',
             'sections' => array(
@@ -77,6 +76,9 @@ class WPUImportTwitter {
                 )
             )
         );
+        $this->settings_values = get_option($this->settings_details['option_id']);
+
+        $this->options['admin_url'] = admin_url('edit.php?post_type=tweet&page=' . $this->options['plugin_id']);
         $this->settings = array(
             'screen_name' => array(
                 'label' => __('Screen name', 'wpuimporttwitter')
@@ -94,6 +96,11 @@ class WPUImportTwitter {
             'import_draft' => array(
                 'label' => __('Import as Draft', 'wpuimporttwitter') ,
                 'label_check' => __('Import tweet as Draft, to allow moderation.', 'wpuimporttwitter') ,
+                'type' => 'checkbox'
+            ) ,
+            'hide_front' => array(
+                'label' => __('Hide on front', 'wpuimporttwitter') ,
+                'label_check' => __('Display tweets only in the admin.', 'wpuimporttwitter') ,
                 'type' => 'checkbox'
             ) ,
             'oauth_access_token' => array(
@@ -121,7 +128,7 @@ class WPUImportTwitter {
             'name' => 'Tweet',
             'plural' => 'Tweets',
             'female' => 0,
-            'wputh__hide_front' => true
+            'wputh__hide_front' => (isset($this->settings_values['hide_front']) && $this->settings_values['hide_front'] == '1')
         );
         return $post_types;
     }
@@ -409,7 +416,7 @@ class WPUImportTwitter {
     /* Menu */
 
     function admin_menu() {
-        add_options_page($this->options['plugin_name'] . ' - ' . __('Settings') , $this->options['plugin_publicname'], $this->options['plugin_userlevel'], $this->options['plugin_pageslug'], array(&$this,
+        add_submenu_page( 'edit.php?post_type=tweet', $this->options['plugin_name'] . ' - ' . __('Settings') , __('Import settings') , $this->options['plugin_userlevel'], $this->options['plugin_pageslug'], array(&$this,
             'admin_settings'
         ) , '', 110);
     }
@@ -439,7 +446,7 @@ class WPUImportTwitter {
                 $this->set_message(__('The credentials seems invalid or the user never tweeted.', 'wpuimporttwitter') , 'error');
             }
         }
-
+        flush_rewrite_rules();
         wp_safe_redirect(wp_get_referer());
         die();
     }
@@ -590,10 +597,12 @@ class WPUImportTwitter {
 
     function install() {
         wp_schedule_event(time() , 'hourly', 'wpuimporttwitter__cron_hook');
+        flush_rewrite_rules();
     }
 
     function deactivation() {
         wp_clear_scheduled_hook('wpuimporttwitter__cron_hook');
+        flush_rewrite_rules();
     }
 
     /* ----------------------------------------------------------
@@ -606,6 +615,7 @@ class WPUImportTwitter {
         delete_post_meta_by_key('wpuimporttwitter_screen_name');
         delete_post_meta_by_key('wpuimporttwitter_original_url');
         delete_post_meta_by_key('wpuimporttwitter_original_tweet');
+        flush_rewrite_rules();
     }
 }
 
