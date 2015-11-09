@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: http://github.com/Darklg/WPUtilities
-Version: 0.6
+Version: 0.7
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -17,12 +17,19 @@ class WPUImportTwitter {
     private $messages = array();
 
     function __construct() {
+        add_action('plugins_loaded', array(&$this,
+            'load_plugin_textdomain'
+        ));
         add_action('init', array(&$this,
             'set_options'
         ));
         add_action('init', array(&$this,
             'init'
         ));
+    }
+
+    function load_plugin_textdomain() {
+        load_plugin_textdomain('wpuimporttwitter', false, dirname(plugin_basename(__FILE__)) . '/lang/');
     }
 
     function init() {
@@ -95,7 +102,7 @@ class WPUImportTwitter {
             ) ,
             'import_draft' => array(
                 'label' => __('Import as Draft', 'wpuimporttwitter') ,
-                'label_check' => __('Import tweet as Draft, to allow moderation.', 'wpuimporttwitter') ,
+                'label_check' => __('Import tweets as Drafts, to allow moderation.', 'wpuimporttwitter') ,
                 'type' => 'checkbox'
             ) ,
             'hide_front' => array(
@@ -302,7 +309,7 @@ class WPUImportTwitter {
         $tweet_title = substr(strip_tags($tweet_text) , 0, 50);
 
         $medias = array();
-        if (count($tweet['entities']->media) > 0) {
+        if (property_exists($tweet['entities'], 'media') && count($tweet['entities']->media) > 0) {
             foreach ($tweet['entities']->media as $media) {
                 if ($media->type == 'photo') {
                     $medias[] = $media->media_url;
@@ -416,7 +423,7 @@ class WPUImportTwitter {
     /* Menu */
 
     function admin_menu() {
-        add_submenu_page( 'edit.php?post_type=tweet', $this->options['plugin_name'] . ' - ' . __('Settings') , __('Import settings') , $this->options['plugin_userlevel'], $this->options['plugin_pageslug'], array(&$this,
+        add_submenu_page('edit.php?post_type=tweet', $this->options['plugin_name'] . ' - ' . __('Settings') , __('Import settings', 'wpuimporttwitter') , $this->options['plugin_userlevel'], $this->options['plugin_pageslug'], array(&$this,
             'admin_settings'
         ) , '', 110);
     }
@@ -462,6 +469,14 @@ class WPUImportTwitter {
             echo '<h2>' . __('Tools') . '</h2>';
             echo '<form action="' . admin_url('admin-post.php') . '" method="post">';
             echo '<input type="hidden" name="action" value="wpuimporttwitter_postaction">';
+            $schedule = wp_next_scheduled('wpuimporttwitter__cron_hook');
+            $seconds = $schedule - time();
+            if ($seconds >= 60) {
+                $minutes = (int)($seconds / 60);
+                $seconds = $seconds % 60;
+            }
+            echo '<p>' . sprintf(__('Next automated import in %s’%s’’', 'wpuimporttwitter') , $minutes, $seconds) . '</p>';
+
             echo '<p class="submit">';
             submit_button(__('Import now', 'wpuimporttwitter') , 'primary', 'import_now', false);
             echo ' ';

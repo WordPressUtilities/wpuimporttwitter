@@ -1,0 +1,126 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WPU Import Twitter\n"
+"POT-Creation-Date: 2015-11-09 23:17+0100\n"
+"PO-Revision-Date: \n"
+"Last-Translator: Darklg <darklg.blog@gmail.com>\n"
+"Language-Team: \n"
+"Language: fr_FR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.4\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-KeywordsList: __;_e;_x:1,2c\n"
+"X-Poedit-SearchPath-0: ../.\n"
+
+#: .././wpuimporttwitter.php:79
+msgid "Import Settings"
+msgstr "Réglages d'import"
+
+#: .././wpuimporttwitter.php:82
+msgid "Oauth Settings"
+msgstr "Paramètres OAuth"
+
+#: .././wpuimporttwitter.php:91
+msgid "Screen name"
+msgstr "Nom d’utilisateur"
+
+#: .././wpuimporttwitter.php:94
+msgid "Include RTs"
+msgstr "Inclure les RTs"
+
+#: .././wpuimporttwitter.php:95
+msgid "Include retweets from other accounts by this user."
+msgstr "Inclure des retweets d'autres comptes par cet utilisateur."
+
+#: .././wpuimporttwitter.php:99
+msgid "Include Replies"
+msgstr "Inclure les Réponses"
+
+#: .././wpuimporttwitter.php:100
+msgid "Include replies to other accounts by this user."
+msgstr "Inclure les réponses à d'autres comptes par cet utilisateur."
+
+#: .././wpuimporttwitter.php:104
+msgid "Import as Draft"
+msgstr "Importer comme brouillon"
+
+#: .././wpuimporttwitter.php:105
+msgid "Import tweets as Drafts, to allow moderation."
+msgstr "Importer les tweets en tant que brouillon, afin de permettre la modération."
+
+#: .././wpuimporttwitter.php:109
+msgid "Hide on front"
+msgstr "Masquer en front"
+
+#: .././wpuimporttwitter.php:110
+msgid "Display tweets only in the admin."
+msgstr "Afficher les tweets uniquement dans l'admin."
+
+#: .././wpuimporttwitter.php:115
+msgid "Access token"
+msgstr "Access token"
+
+#: .././wpuimporttwitter.php:119
+msgid "Access token secret"
+msgstr "Access token secret"
+
+#: .././wpuimporttwitter.php:123
+msgid "Consumer key"
+msgstr "Consumer key"
+
+#: .././wpuimporttwitter.php:127
+msgid "Consumer secret"
+msgstr "Consumer secret"
+
+#: .././wpuimporttwitter.php:418 .././wpuimporttwitter.php:426
+#: .././wpuimporttwitter.php:489
+msgid "Settings"
+msgstr "Réglages"
+
+#: .././wpuimporttwitter.php:426
+msgid "Import settings"
+msgstr "Réglages d'import"
+
+#: .././wpuimporttwitter.php:438
+#, php-format
+msgid "Imported tweets : %s"
+msgstr "Tweets importés : %s"
+
+#: .././wpuimporttwitter.php:441
+msgid "No new imports"
+msgstr "Aucun nouvel import"
+
+#: .././wpuimporttwitter.php:450
+msgid "The API works great !"
+msgstr "L'API fonctionne très bien !"
+
+#: .././wpuimporttwitter.php:453
+msgid "The credentials seems invalid or the user never tweeted."
+msgstr "Les identifiants semblent incorrects ou l'utilisateur n'a jamais tweeté."
+
+#: .././wpuimporttwitter.php:469
+msgid "Tools"
+msgstr "Outils"
+
+#: .././wpuimporttwitter.php:478
+#, php-format
+msgid "Next automated import in %s’%s’’"
+msgstr "Prochain import automatique dans %s min et %ss"
+
+#: .././wpuimporttwitter.php:481
+msgid "Import now"
+msgstr "Importer maintenant"
+
+#: .././wpuimporttwitter.php:483
+msgid "Test API"
+msgstr "Tester l'API"
+
+#: .././wpuimporttwitter.php:493
+msgid "Save Changes"
+msgstr "Sauvegarder les modifications"
+
+#~ msgid "Import tweet as Draft, to allow moderation."
+#~ msgstr "Importer les tweets en tant que brouillon, afin de permettre la modération."
