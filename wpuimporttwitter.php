@@ -646,5 +646,6 @@ register_deactivation_hook(__FILE__, array(&$WPUImportTwitter,
 add_action('wpuimporttwitter__cron_hook', 'wpuimporttwitter__import');
 function wpuimporttwitter__import() {
     global $WPUImportTwitter;
+    $WPUImportTwitter->set_options();
     $WPUImportTwitter->import();
 }
