@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: http://github.com/Darklg/WPUtilities
-Version: 0.7
+Version: 0.7.1
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -646,5 +646,6 @@ register_deactivation_hook(__FILE__, array(&$WPUImportTwitter,
 add_action('wpuimporttwitter__cron_hook', 'wpuimporttwitter__import');
 function wpuimporttwitter__import() {
     global $WPUImportTwitter;
+    $WPUImportTwitter->set_options();
     $WPUImportTwitter->import();
 }
