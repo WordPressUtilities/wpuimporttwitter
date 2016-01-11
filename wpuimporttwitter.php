@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: http://github.com/Darklg/WPUtilities
-Version: 0.7
+Version: 0.7.1
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
