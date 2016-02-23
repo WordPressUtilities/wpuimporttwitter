@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 0.8
+Version: 0.9
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -16,7 +16,7 @@ class WPUImportTwitter {
     private $debug = false;
     private $messages = array();
 
-    function __construct() {
+    public function __construct() {
         add_action('plugins_loaded', array(&$this,
             'load_plugin_textdomain'
         ));
@@ -167,7 +167,6 @@ class WPUImportTwitter {
         // Exclude tweets already imported
         foreach ($last_tweets as $tweet) {
             if (!in_array($tweet['id'], $imported_tweets_ids)) {
-
                 // Create a post for each new tweet
                 $post_id = $this->create_post_from_tweet($tweet);
                 if (is_numeric($post_id) && $post_id > 0) {
@@ -180,52 +179,47 @@ class WPUImportTwitter {
     }
 
     public function get_last_imported_tweets_ids() {
-        $ids = array();
-        $posts = get_posts(array(
-            'posts_per_page' => 100,
-            'post_type' => 'tweet',
-            'post_status' => array(
-                'publish',
-                'pending',
-                'draft',
-                'future',
-                'private',
-                'inherit'
-            )
+        global $wpdb;
+        return $wpdb->get_col("SELECT meta_value FROM $wpdb->postmeta WHERE meta_key = 'wpuimporttwitter_id' ORDER BY meta_id DESC LIMIT 0,200");
+    }
+
+    public function get_last_tweets_for_tag($tag = false) {
+        return $this->get_last_tweets_for(array(
+            'q' => '#'.$tag
         ));
-        foreach ($posts as $tweet) {
-            $id = get_post_meta($tweet->ID, 'wpuimporttwitter_id', 1);
-            if (is_numeric($id)) {
-                $ids[] = $id;
-            }
-        }
-        return $ids;
     }
 
     public function get_last_tweets_for_user($screen_name = false) {
         $settings = get_option($this->settings_details['option_id']);
-        if (!$this->test_correct_oauth_values()) {
-            return false;
-        }
 
         if ($screen_name == false) {
             $screen_name = $settings['screen_name'];
         }
 
-        /* Based on http://stackoverflow.com/a/16169848 by @budidino */
+        return $this->get_last_tweets_for(array(
+            'q' => 'from:'.$screen_name
+        ));
+    }
 
-        $twitter_url = 'https://api.twitter.com/1.1/statuses/user_timeline.json';
+    public function get_last_tweets_for($request) {
+        $settings = get_option($this->settings_details['option_id']);
+        if (!$this->test_correct_oauth_values()) {
+            return false;
+        }
 
         // Create request
-        $request = array(
-            'screen_name' => $screen_name,
-            'contributor_details' => 'false',
-            'count' => 50
-        );
+        $request['count']  = 40;
+        $request['q'] .= ($settings['include_replies'] != 1) ? ' excludes:replies' : ' include:replies';
+        $request['q'] .= ($settings['include_rts'] != 1) ? ' excludes:retweets' : ' include:retweets';
+        $request['result_type'] = 'recent';
 
-        $request['exclude_replies'] = ($settings['include_replies'] != 1) ? 'true' : 'false';
-        $request['include_rts'] = ($settings['include_rts'] == 1) ? 'true' : 'false';
+        return $this->get_tweets_from_request($request);
+    }
 
+    public function get_tweets_from_request($request) {
+        /* Based on http://stackoverflow.com/a/16169848 by @budidino */
+        $twitter_url = 'https://api.twitter.com/1.1/search/tweets.json';
+        $settings = get_option($this->settings_details['option_id']);
         $oauth = array(
             'oauth_consumer_key' => $settings['consumer_key'],
             'oauth_nonce' => md5(mt_rand()),
@@ -299,15 +293,15 @@ class WPUImportTwitter {
     public function get_tweets_from_response($json_response) {
         $tweets = array();
         $response = json_decode($json_response);
-        if (!is_array($response)) {
+        if (!is_object($response)) {
             return $response;
         }
-        foreach ($response as $tweet) {
+        foreach ($response->statuses as $tweet) {
             if (!isset($tweet->text)) {
                 continue;
             }
-            $tweets[$tweet->id] = array(
-                'id' => $tweet->id,
+            $tweets[$tweet->id_str] = array(
+                'id' => $tweet->id_str,
                 'text' => $tweet->text,
                 'screen_name' => $tweet->user->screen_name,
                 'time' => strtotime($tweet->created_at),
@@ -318,7 +312,6 @@ class WPUImportTwitter {
     }
 
     public function create_post_from_tweet($tweet) {
-
         $tweet_text = $this->apply_entities($tweet['text'], $tweet['entities']);
         $tweet_title = substr(strip_tags($tweet_text), 0, 50);
 
