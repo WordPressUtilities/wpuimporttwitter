@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 0.9
+Version: 1.0
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -91,8 +91,10 @@ class WPUImportTwitter {
 
         $this->options['admin_url'] = admin_url('edit.php?post_type=tweet&page=' . $this->options['plugin_id']);
         $this->settings = array(
-            'screen_name' => array(
-                'label' => __('Screen name', 'wpuimporttwitter')
+            'sources' => array(
+                'label' => __('Sources', 'wpuimporttwitter'),
+                'help' => __('One #hashtag or one @user per line.', 'wpuimporttwitter'),
+                'type' => 'textarea'
             ),
             'include_rts' => array(
                 'label' => __('Include RTs', 'wpuimporttwitter'),
@@ -107,6 +109,11 @@ class WPUImportTwitter {
             'import_draft' => array(
                 'label' => __('Import as Draft', 'wpuimporttwitter'),
                 'label_check' => __('Import tweets as Drafts, to allow moderation.', 'wpuimporttwitter'),
+                'type' => 'checkbox'
+            ),
+            'import_images' => array(
+                'label' => __('Import images', 'wpuimporttwitter'),
+                'label_check' => __('Import attached images.', 'wpuimporttwitter'),
                 'type' => 'checkbox'
             ),
             'hide_front' => array(
@@ -156,12 +163,36 @@ class WPUImportTwitter {
 
     public function import() {
 
-        // Get last tweets from Twitter
-        $last_tweets = $this->get_last_tweets_for_user();
+        $settings = get_option($this->settings_details['option_id']);
 
         // Get ids from last imported tweets
         $imported_tweets_ids = $this->get_last_imported_tweets_ids();
 
+        // Try to convert if old option model is used
+        if (!isset($settings['sources']) && isset($settings['screen_name'])) {
+            $settings['sources'] = '@' . $settings['screen_name'];
+            $settings['screen_name'] = '';
+            update_option($this->settings_details['option_id'], $settings);
+        }
+
+        $sources = $this->extract_sources($settings['sources']);
+        $imported_tweets = 0;
+        foreach ($sources as $source) {
+            $last_tweets = array();
+            if ($source['type'] == 'user') {
+                $last_tweets = $this->get_last_tweets_for_user($source['id']);
+            }
+            if ($source['type'] == 'tag') {
+                $last_tweets = $this->get_last_tweets_for_tag($source['id']);
+            }
+            // Get last tweets from Twitter
+            $imported_tweets += $this->import_last_tweets($last_tweets, $imported_tweets_ids);
+        }
+
+        return $imported_tweets;
+    }
+
+    public function import_last_tweets($last_tweets, $imported_tweets_ids) {
         $nb_imports = 0;
 
         // Exclude tweets already imported
@@ -174,8 +205,34 @@ class WPUImportTwitter {
                 }
             }
         }
-
         return $nb_imports;
+
+    }
+
+    public function extract_sources($sources) {
+        $sources = str_replace(array(',', ';'), ' ', $sources);
+        $arr_sources = explode("\n", $sources);
+        $final_sources = array();
+        foreach ($arr_sources as $source) {
+            $src = trim($source);
+            $type_source = '';
+            if ($source[0] == '@') {
+                $type_source = 'user';
+            }
+            if ($source[0] == '#') {
+                $type_source = 'tag';
+            }
+
+            if ($type_source != '') {
+                $final_sources[] = array(
+                    'type' => $type_source,
+                    'id' => substr($src, 1)
+                );
+            }
+
+        }
+
+        return $final_sources;
     }
 
     public function get_last_imported_tweets_ids() {
@@ -185,20 +242,17 @@ class WPUImportTwitter {
 
     public function get_last_tweets_for_tag($tag = false) {
         return $this->get_last_tweets_for(array(
-            'q' => '#'.$tag
+            'q' => '#' . $tag
         ));
     }
 
     public function get_last_tweets_for_user($screen_name = false) {
-        $settings = get_option($this->settings_details['option_id']);
-
-        if ($screen_name == false) {
-            $screen_name = $settings['screen_name'];
-        }
-
-        return $this->get_last_tweets_for(array(
-            'q' => 'from:'.$screen_name
-        ));
+        $request = array(
+            'q' => 'from:' . $screen_name
+        );
+        $request['q'] .= ($settings['include_replies'] != 1) ? ' excludes:replies' : ' include:replies';
+        $request['q'] .= ($settings['include_rts'] != 1) ? ' excludes:retweets' : ' include:retweets';
+        return $this->get_last_tweets_for($request);
     }
 
     public function get_last_tweets_for($request) {
@@ -208,9 +262,7 @@ class WPUImportTwitter {
         }
 
         // Create request
-        $request['count']  = 40;
-        $request['q'] .= ($settings['include_replies'] != 1) ? ' excludes:replies' : ' include:replies';
-        $request['q'] .= ($settings['include_rts'] != 1) ? ' excludes:retweets' : ' include:retweets';
+        $request['count'] = 40;
         $request['result_type'] = 'recent';
 
         return $this->get_tweets_from_request($request);
@@ -279,8 +331,7 @@ class WPUImportTwitter {
             'oauth_access_token',
             'oauth_access_token_secret',
             'consumer_key',
-            'consumer_secret',
-            'screen_name'
+            'consumer_secret'
         );
         foreach ($test_settings_ids as $id) {
             if (!isset($settings[$id]) || empty($settings[$id])) {
@@ -364,7 +415,9 @@ class WPUImportTwitter {
         add_post_meta($post_id, 'wpuimporttwitter_original_url', 'https://twitter.com/statuses/' . $tweet['id']);
         add_post_meta($post_id, 'wpuimporttwitter_original_tweet', $tweet['text']);
 
-        $this->import_medias($post_id, $medias);
+        if (is_array($settings) && isset($settings['import_images']) && $settings['import_images'] == '1') {
+            $this->import_medias($post_id, $medias);
+        }
 
         return $post_id;
     }
@@ -465,7 +518,7 @@ class WPUImportTwitter {
 
         if (isset($_POST['test_api'])) {
 
-            $last_tweets = $this->get_last_tweets_for_user();
+            $last_tweets = $this->get_last_tweets_for_user('twitter');
 
             if (is_array($last_tweets) && !empty($last_tweets)) {
                 $this->set_message(__('The API works great !', 'wpuimporttwitter'), 'created');
@@ -531,6 +584,7 @@ class WPUImportTwitter {
         foreach ($this->settings as $id => $input) {
             $label = isset($input['label']) ? $input['label'] : '';
             $label_check = isset($input['label_check']) ? $input['label_check'] : '';
+            $help = isset($input['help']) ? $input['help'] : '';
             $type = isset($input['type']) ? $input['type'] : 'text';
             $section = isset($input['section']) ? $input['section'] : $default_section;
             add_settings_field($id, $label, array(&$this,
@@ -540,6 +594,7 @@ class WPUImportTwitter {
                 'id' => $id,
                 'label_for' => $id,
                 'type' => $type,
+                'help' => $help,
                 'label_check' => $label_check
             ));
         }
@@ -547,7 +602,10 @@ class WPUImportTwitter {
 
     public function options_validate($input) {
         $options = get_option($this->settings_details['option_id']);
-        foreach ($this->settings as $id => $name) {
+        foreach ($this->settings as $id => $setting) {
+            if (!isset($input[$id])) {
+                $input[$id] = '0';
+            }
             $options[$id] = esc_html(trim($input[$id]));
         }
         return $options;
@@ -555,17 +613,22 @@ class WPUImportTwitter {
 
     public function render__field($args = array()) {
         $options = get_option($this->settings_details['option_id']);
-        $label_check = isset($args['label_check']) ? $args['label_check'] : '';
-        $type = isset($args['type']) ? $args['type'] : 'text';
         $name = ' name="wpuimporttwitter_options[' . $args['id'] . ']" ';
         $id = ' id="' . $args['id'] . '" ';
 
-        switch ($type) {
+        switch ($args['type']) {
         case 'checkbox':
-            echo '<label><input type="checkbox" ' . $name . ' ' . $id . ' ' . checked($options[$args['id']], '1', 0) . ' value="1" /> ' . $label_check . '</label>';
+            echo '<label><input type="checkbox" ' . $name . ' ' . $id . ' ' . checked($options[$args['id']], '1', 0) . ' value="1" /> ' . $args['label_check'] . '</label>';
+            break;
+        case 'textarea':
+            echo '<textarea ' . $name . ' ' . $id . ' cols="20" rows="5">' . esc_attr($options[$args['id']]) . '</textarea>';
             break;
         default:
-            echo '<input ' . $name . ' ' . $id . ' type="' . $type . '" value="' . esc_attr($options[$args['id']]) . '" />';
+            echo '<input ' . $name . ' ' . $id . ' type="' . $args['type'] . '" value="' . esc_attr($options[$args['id']]) . '" />';
+        }
+
+        if (!empty($args['help'])) {
+            echo '<div><small>' . $args['help'] . '</small></div>';
         }
     }
 
