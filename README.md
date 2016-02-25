@@ -49,7 +49,11 @@ TODO
 * [x] Import pictures.
 * [x] Clean title from URLs before crop.
 * [x] Admin front visibility.
+* [x] Edit stored values with WPU Post metas.
+* [x] Translation.
+* [x] Hook for post type id.
 * [ ] Import smilies.
-* [ ] Translation.
 * [ ] Add a help link to twitter developper website.
-* [ ] Edit stored values with WPU Post metas.
+* [ ] Hook for cron interval.
+* [ ] Store if is RT.
+* [ ] Store if is Reply.
