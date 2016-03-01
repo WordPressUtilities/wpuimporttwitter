@@ -57,3 +57,6 @@ TODO
 * [ ] Hook for cron interval.
 * [ ] Store if is RT.
 * [ ] Store if is Reply.
+* [ ] Remove Post types & taxos dependency.
+* [ ] Delete empty tags : DELETE FROM wp_term_taxonomy WHERE count = 0 and taxonomy = 'twitter_tag'
+

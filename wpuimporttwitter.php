@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.1
+Version: 1.1.1
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -61,9 +61,6 @@ class WPUImportTwitter {
         add_action('admin_menu', array(&$this,
             'admin_menu'
         ));
-        add_action('admin_init', array(&$this,
-            'add_settings'
-        ));
         add_filter("plugin_action_links_" . plugin_basename(__FILE__), array(&$this,
             'add_settings_link'
         ));
@@ -82,6 +79,7 @@ class WPUImportTwitter {
             'plugin_pageslug' => 'wpuimporttwitter'
         );
         $this->settings_details = array(
+            'plugin_id' => 'wpuimporttwitter',
             'option_id' => 'wpuimporttwitter_options',
             'sections' => array(
                 'import' => array(
@@ -92,9 +90,6 @@ class WPUImportTwitter {
                 )
             )
         );
-        $this->settings_values = get_option($this->settings_details['option_id']);
-
-        $this->options['admin_url'] = admin_url('edit.php?post_type=' . $this->post_type . '&page=' . $this->options['plugin_id']);
         $this->settings = array(
             'sources' => array(
                 'label' => __('Sources', 'wpuimporttwitter'),
@@ -143,6 +138,12 @@ class WPUImportTwitter {
                 'label' => __('Consumer secret', 'wpuimporttwitter')
             )
         );
+        if (is_admin()) {
+            include 'inc/WPUBaseSettings.php';
+            new \wpuimporttwitter\WPUBaseSettings($this->settings_details,$this->settings);
+        }
+        $this->settings_values = get_option($this->settings_details['option_id']);
+        $this->options['admin_url'] = admin_url('edit.php?post_type=' . $this->post_type . '&page=' . $this->options['plugin_id']);
     }
 
     public function create_posttypes($post_types) {
@@ -573,70 +574,6 @@ class WPUImportTwitter {
         echo submit_button(__('Save Changes', 'wpuimporttwitter'));
         echo '</form>';
         echo '</div>';
-    }
-
-    /* ----------------------------------------------------------
-      Plugin Settings
-    ---------------------------------------------------------- */
-
-    public function add_settings() {
-        register_setting($this->settings_details['option_id'], $this->settings_details['option_id'], array(&$this,
-            'options_validate'
-        ));
-        $default_section = key($this->settings_details['sections']);
-        foreach ($this->settings_details['sections'] as $id => $section) {
-            add_settings_section($id, $section['name'], '', $this->options['plugin_id']);
-        }
-
-        foreach ($this->settings as $id => $input) {
-            $label = isset($input['label']) ? $input['label'] : '';
-            $label_check = isset($input['label_check']) ? $input['label_check'] : '';
-            $help = isset($input['help']) ? $input['help'] : '';
-            $type = isset($input['type']) ? $input['type'] : 'text';
-            $section = isset($input['section']) ? $input['section'] : $default_section;
-            add_settings_field($id, $label, array(&$this,
-                'render__field'
-            ), $this->options['plugin_id'], $section, array(
-                'name' => $this->settings_details['option_id'] . '[' . $id . ']',
-                'id' => $id,
-                'label_for' => $id,
-                'type' => $type,
-                'help' => $help,
-                'label_check' => $label_check
-            ));
-        }
-    }
-
-    public function options_validate($input) {
-        $options = get_option($this->settings_details['option_id']);
-        foreach ($this->settings as $id => $setting) {
-            if (!isset($input[$id])) {
-                $input[$id] = '0';
-            }
-            $options[$id] = esc_html(trim($input[$id]));
-        }
-        return $options;
-    }
-
-    public function render__field($args = array()) {
-        $options = get_option($this->settings_details['option_id']);
-        $name = ' name="wpuimporttwitter_options[' . $args['id'] . ']" ';
-        $id = ' id="' . $args['id'] . '" ';
-
-        switch ($args['type']) {
-        case 'checkbox':
-            echo '<label><input type="checkbox" ' . $name . ' ' . $id . ' ' . checked($options[$args['id']], '1', 0) . ' value="1" /> ' . $args['label_check'] . '</label>';
-            break;
-        case 'textarea':
-            echo '<textarea ' . $name . ' ' . $id . ' cols="20" rows="5">' . esc_attr($options[$args['id']]) . '</textarea>';
-            break;
-        default:
-            echo '<input ' . $name . ' ' . $id . ' type="' . $args['type'] . '" value="' . esc_attr($options[$args['id']]) . '" />';
-        }
-
-        if (!empty($args['help'])) {
-            echo '<div><small>' . $args['help'] . '</small></div>';
-        }
     }
 
     /* ----------------------------------------------------------
