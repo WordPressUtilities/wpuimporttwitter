@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.1.1
+Version: 1.1.2
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -51,9 +51,7 @@ class WPUImportTwitter {
         }
 
         // Display notices
-        global $current_user;
-        $this->transient_msg = $current_user->ID . $this->options['plugin_id'];
-        add_action('wpuimporttwitter_admin_notices', array(&$this,
+        add_action('wpuimporttwitter_admin_notices', array(&$this->messages,
             'admin_notices'
         ));
 
@@ -78,6 +76,12 @@ class WPUImportTwitter {
             'plugin_id' => 'wpuimporttwitter',
             'plugin_pageslug' => 'wpuimporttwitter'
         );
+        // Messages
+        if (is_admin()) {
+            include 'inc/WPUBaseMessages.php';
+            $this->messages = new \wpuimporttwitter\WPUBaseMessages($this->options['plugin_id']);
+        }
+        // Settings
         $this->settings_details = array(
             'plugin_id' => 'wpuimporttwitter',
             'option_id' => 'wpuimporttwitter_options',
@@ -140,10 +144,12 @@ class WPUImportTwitter {
         );
         if (is_admin()) {
             include 'inc/WPUBaseSettings.php';
-            new \wpuimporttwitter\WPUBaseSettings($this->settings_details,$this->settings);
+            new \wpuimporttwitter\WPUBaseSettings($this->settings_details, $this->settings);
         }
         $this->settings_values = get_option($this->settings_details['option_id']);
+        // Admin URL
         $this->options['admin_url'] = admin_url('edit.php?post_type=' . $this->post_type . '&page=' . $this->options['plugin_id']);
+
     }
 
     public function create_posttypes($post_types) {
@@ -518,9 +524,9 @@ class WPUImportTwitter {
         if (isset($_POST['import_now'])) {
             $nb_imports = $this->import();
             if ($nb_imports > 0) {
-                $this->set_message(sprintf(__('Imported tweets : %s', 'wpuimporttwitter'), $nb_imports));
+                $this->messages->set_message('imported_nb', sprintf(__('Imported tweets : %s', 'wpuimporttwitter'), $nb_imports));
             } else {
-                $this->set_message(__('No new imports', 'wpuimporttwitter'), 'created');
+                $this->messages->set_message('imported_0', __('No new imports', 'wpuimporttwitter'), 'created');
             }
         }
 
@@ -529,9 +535,9 @@ class WPUImportTwitter {
             $last_tweets = $this->get_last_tweets_for_user('twitter');
 
             if (is_array($last_tweets) && !empty($last_tweets)) {
-                $this->set_message(__('The API works great !', 'wpuimporttwitter'), 'created');
+                $this->messages->set_message('api_works', __('The API works great !', 'wpuimporttwitter'), 'created');
             } else {
-                $this->set_message(__('The credentials seems invalid or the user never tweeted.', 'wpuimporttwitter'), 'error');
+                $this->messages->set_message('api_invalid', __('The credentials seems invalid or the user never tweeted.', 'wpuimporttwitter'), 'error');
             }
         }
         flush_rewrite_rules();
@@ -598,42 +604,6 @@ class WPUImportTwitter {
 
         $r .= implode(', ', $values);
         return $r;
-    }
-
-    /* ----------------------------------------------------------
-      Messages
-    ---------------------------------------------------------- */
-
-    /* Set notices messages */
-    private function set_message($message, $group = false) {
-        $groups = array(
-            'updated',
-            'error'
-        );
-        if (!in_array($group, $groups)) {
-            $group = $groups[0];
-        }
-        $messages = (array) get_transient($this->transient_msg);
-
-        $messages[$group][] = $message;
-        set_transient($this->transient_msg, $messages);
-    }
-
-    /* Display notices */
-    public function admin_notices() {
-        $messages = (array) get_transient($this->transient_msg);
-        if (!empty($messages)) {
-            foreach ($messages as $group_id => $group) {
-                if (is_array($group)) {
-                    foreach ($group as $message) {
-                        echo '<div class="' . $group_id . '"><p>' . $message . '</p></div>';
-                    }
-                }
-            }
-        }
-
-        // Empty messages
-        delete_transient($this->transient_msg);
     }
 
     /* ----------------------------------------------------------
