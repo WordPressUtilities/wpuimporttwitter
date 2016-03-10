@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.1.2
+Version: 1.2
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -256,7 +256,7 @@ class WPUImportTwitter {
 
     public function get_last_tweets_for_tag($tag = false) {
         return $this->get_last_tweets_for(array(
-            'q' => '#' . $tag
+            'q' => '#' . $tag.' exclude:retweets'
         ));
     }
 
@@ -365,19 +365,42 @@ class WPUImportTwitter {
             if (!isset($tweet->text)) {
                 continue;
             }
+
+            $name = $tweet->user->name;
+            $screen_name = $tweet->user->screen_name;
+            $text = $tweet->text;
+            $original_name = $tweet->user->name;
+            $original_screen_name = $tweet->user->screen_name;
+            $original_text = $tweet->text;
+            $is_retweet = isset($tweet->retweeted_status);
+            if ($is_retweet) {
+                $original_name = $tweet->retweeted_status->user->name;
+                $original_screen_name = $tweet->retweeted_status->user->screen_name;
+                $original_text = $tweet->retweeted_status->text;
+            }
+
             $tweets[$tweet->id_str] = array(
                 'id' => $tweet->id_str,
                 'text' => $tweet->text,
-                'screen_name' => $tweet->user->screen_name,
+                'name' => $name,
+                'screen_name' => $screen_name,
                 'time' => strtotime($tweet->created_at),
-                'entities' => $tweet->entities
+                'entities' => $tweet->entities,
+                'is_retweet' => $is_retweet,
+                'is_reply' => isset($tweet->in_reply_to_status_id),
+                /* Retweet */
+                'original_name' => $original_name,
+                'original_screen_name' => $original_screen_name,
+                'original_text' => $original_text
             );
+
         }
         return $tweets;
     }
 
     public function create_post_from_tweet($tweet) {
         $tweet_text = $this->apply_entities($tweet['text'], $tweet['entities']);
+        $original_tweet_text = $this->apply_entities($tweet['original_text'], $tweet['entities']);
         $tweet_title = substr(strip_tags($tweet_text), 0, 50);
 
         // Extract medias
@@ -426,8 +449,15 @@ class WPUImportTwitter {
         // Store metas
         add_post_meta($post_id, 'wpuimporttwitter_id', $tweet['id']);
         add_post_meta($post_id, 'wpuimporttwitter_screen_name', $tweet['screen_name']);
+        add_post_meta($post_id, 'wpuimporttwitter_name', $tweet['name']);
+        add_post_meta($post_id, 'wpuimporttwitter_is_reply', $tweet['is_reply']);
+        add_post_meta($post_id, 'wpuimporttwitter_is_retweet', $tweet['is_retweet']);
         add_post_meta($post_id, 'wpuimporttwitter_original_url', 'https://twitter.com/statuses/' . $tweet['id']);
         add_post_meta($post_id, 'wpuimporttwitter_original_tweet', $tweet['text']);
+        add_post_meta($post_id, 'wpuimporttwitter_original_name', $tweet['original_name']);
+        add_post_meta($post_id, 'wpuimporttwitter_original_screen_name', $tweet['original_screen_name']);
+        add_post_meta($post_id, 'wpuimporttwitter_original_text', $tweet['original_text']);
+        add_post_meta($post_id, 'wpuimporttwitter_original_tweet_text', $original_tweet_text);
 
         if (is_array($settings) && isset($settings['import_images']) && $settings['import_images'] == '1') {
             $this->import_medias($post_id, $medias);
@@ -658,9 +688,15 @@ class WPUImportTwitter {
     public function uninstall() {
         delete_option($this->settings_details['option_id']);
         delete_post_meta_by_key('wpuimporttwitter_id');
-        delete_post_meta_by_key('wpuimporttwitter_screen_name');
-        delete_post_meta_by_key('wpuimporttwitter_original_url');
+        delete_post_meta_by_key('wpuimporttwitter_is_reply');
+        delete_post_meta_by_key('wpuimporttwitter_is_retweet');
+        delete_post_meta_by_key('wpuimporttwitter_name');
+        delete_post_meta_by_key('wpuimporttwitter_original_name');
+        delete_post_meta_by_key('wpuimporttwitter_original_screen_name');
+        delete_post_meta_by_key('wpuimporttwitter_original_text');
         delete_post_meta_by_key('wpuimporttwitter_original_tweet');
+        delete_post_meta_by_key('wpuimporttwitter_original_url');
+        delete_post_meta_by_key('wpuimporttwitter_screen_name');
         flush_rewrite_rules();
     }
 }
