@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.2
+Version: 1.3
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -72,7 +72,8 @@ class WPUImportTwitter {
         $this->options = array(
             'plugin_publicname' => 'Twitter Import',
             'plugin_name' => 'Twitter Import',
-            'plugin_userlevel' => 'manage_options',
+            'plugin_minusercap' => 'moderate_comments',
+            'plugin_usercap' => 'manage_options',
             'plugin_id' => 'wpuimporttwitter',
             'plugin_pageslug' => 'wpuimporttwitter'
         );
@@ -85,8 +86,10 @@ class WPUImportTwitter {
         $this->settings_details = array(
             'plugin_id' => 'wpuimporttwitter',
             'option_id' => 'wpuimporttwitter_options',
+            'user_cap' => $this->options['plugin_minusercap'],
             'sections' => array(
                 'import' => array(
+                    'user_cap' => 'moderate_comments',
                     'name' => __('Import Settings', 'wpuimporttwitter')
                 ),
                 'oauth' => array(
@@ -542,7 +545,7 @@ class WPUImportTwitter {
     /* Menu */
 
     public function admin_menu() {
-        add_submenu_page('edit.php?post_type=' . $this->post_type, $this->options['plugin_name'] . ' - ' . __('Settings'), __('Import settings', 'wpuimporttwitter'), $this->options['plugin_userlevel'], $this->options['plugin_pageslug'], array(&$this,
+        add_submenu_page('edit.php?post_type=' . $this->post_type, $this->options['plugin_name'] . ' - ' . __('Settings'), __('Import settings', 'wpuimporttwitter'), $this->options['plugin_minusercap'], $this->options['plugin_pageslug'], array(&$this,
             'admin_settings'
         ), '', 110);
     }
@@ -592,7 +595,9 @@ class WPUImportTwitter {
                 $minutes = (int) ($seconds / 60);
                 $seconds = $seconds % 60;
             }
-            echo '<p>' . sprintf(__('Next automated import in %s’%s’’', 'wpuimporttwitter'), $minutes, $seconds) . '</p>';
+            if ($schedule > 0) {
+                echo '<p>' . sprintf(__('Next automated import in %s’%s’’', 'wpuimporttwitter'), $minutes, $seconds) . '</p>';
+            }
 
             echo '<p class="submit">';
             submit_button(__('Import now', 'wpuimporttwitter'), 'primary', 'import_now', false);
@@ -603,12 +608,14 @@ class WPUImportTwitter {
             echo '<hr />';
         }
 
-        echo '<h2>' . __('Settings') . '</h2>';
-        echo '<form action="' . admin_url('options.php') . '" method="post">';
-        settings_fields($this->settings_details['option_id']);
-        do_settings_sections($this->options['plugin_id']);
-        echo submit_button(__('Save Changes', 'wpuimporttwitter'));
-        echo '</form>';
+        if (current_user_can($this->options['plugin_minusercap'])) {
+            echo '<h2>' . __('Settings') . '</h2>';
+            echo '<form action="' . admin_url('options.php') . '" method="post">';
+            settings_fields($this->settings_details['option_id']);
+            do_settings_sections($this->options['plugin_id']);
+            echo submit_button(__('Save Changes', 'wpuimporttwitter'));
+            echo '</form>';
+        }
         echo '</div>';
     }
 
