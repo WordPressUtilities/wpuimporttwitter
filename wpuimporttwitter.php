@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.3.2
+Version: 1.3.3
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -259,7 +259,7 @@ class WPUImportTwitter {
 
     public function get_last_tweets_for_tag($tag = false) {
         return $this->get_last_tweets_for(array(
-            'q' => '#' . $tag.' exclude:retweets'
+            'q' => '#' . $tag . ' exclude:retweets'
         ));
     }
 
@@ -679,7 +679,8 @@ class WPUImportTwitter {
     ---------------------------------------------------------- */
 
     public function install() {
-        wp_schedule_event(time(), 'hourly', 'wpuimporttwitter__cron_hook');
+        wp_clear_scheduled_hook('wpuimporttwitter__cron_hook');
+        wp_schedule_event(time() + 3600, 'hourly', 'wpuimporttwitter__cron_hook');
         flush_rewrite_rules();
     }
 
