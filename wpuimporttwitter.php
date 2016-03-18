@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.3.3
+Version: 1.4
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -45,6 +45,9 @@ class WPUImportTwitter {
         add_filter('wputh_post_metas_fields', array(&$this,
             'post_meta_fields'
         ), 10, 1);
+        add_filter('wputh_post_metas_admin_column_content_callback', array(&$this,
+            'post_meta_column_callback'
+        ), 10, 5);
 
         if (!is_admin()) {
             return;
@@ -649,7 +652,11 @@ class WPUImportTwitter {
 
     public function post_meta_boxes($boxes) {
         $boxes['tweet_box'] = array(
-            'name' => 'Tweet details',
+            'name' => __('Tweet details', 'wpuimporttwitter'),
+            'post_type' => array($this->post_type)
+        );
+        $boxes['tweet_original_box'] = array(
+            'name' => __('Original Tweet details', 'wpuimporttwitter'),
             'post_type' => array($this->post_type)
         );
         return $boxes;
@@ -664,14 +671,30 @@ class WPUImportTwitter {
         );
         $fields['wpuimporttwitter_id'] = array(
             'box' => 'tweet_box',
-            'name' => __('Tweet id', 'wpuimporttwitter')
+            'name' => __('Tweet ID', 'wpuimporttwitter')
+        );
+        $fields['wpuimporttwitter_original_screen_name'] = array(
+            'box' => 'tweet_original_box',
+            'name' => __('Original author', 'wpuimporttwitter'),
         );
         $fields['wpuimporttwitter_original_url'] = array(
-            'box' => 'tweet_box',
+            'box' => 'tweet_original_box',
             'type' => 'url',
-            'name' => __('Tweet url', 'wpuimporttwitter')
+            'name' => __('Original url', 'wpuimporttwitter')
+        );
+        $fields['wpuimporttwitter_original_tweet_text'] = array(
+            'box' => 'tweet_original_box',
+            'type' => 'editor',
+            'name' => __('Original text', 'wpuimporttwitter')
         );
         return $fields;
+    }
+
+    public function post_meta_column_callback($display_value, $field_id, $post_ID, $field, $value) {
+        if ($field_id == 'wpuimporttwitter_screen_name' && !empty($value)) {
+            $display_value = '<div style="margin-bottom:5px;"><img src="https://twitter.com/' . esc_attr($value) . '/profile_image?size=normal" alt="" /></div>' . $display_value;
+        }
+        return $display_value;
     }
 
     /* ----------------------------------------------------------
@@ -723,4 +746,8 @@ function wpuimporttwitter__import() {
     global $WPUImportTwitter;
     $WPUImportTwitter->set_options();
     $WPUImportTwitter->import();
+}
+
+function screen_name_callback($value = '') {
+    # code...
 }
