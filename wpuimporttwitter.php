@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.4.1
+Version: 1.4.2
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -505,7 +505,7 @@ class WPUImportTwitter {
         // Urls
         if (!empty($entities->urls)) {
             foreach ($entities->urls as $url) {
-                $text = str_replace($url->url, '<a class="twitter-link" href="' . $url->expanded_url . '">' . $url->display_url . '</a>', $text);
+                $text = str_replace($url->url, '<a class="twitter-links twitter-entities" href="' . $url->expanded_url . '">' . $url->display_url . '</a>', $text);
             }
         }
 
@@ -526,7 +526,7 @@ class WPUImportTwitter {
         // Medias
         if (!empty($entities->media)) {
             foreach ($entities->media as $media) {
-                $text = str_replace($media->url, '<a class="twitter-link" href="' . $media->expanded_url . '">' . $media->display_url . '</a>', $text);
+                $text = str_replace($media->url, '<a class="twitter-link twitter-medias" href="' . $media->expanded_url . '">' . $media->display_url . '</a>', $text);
             }
         }
 
