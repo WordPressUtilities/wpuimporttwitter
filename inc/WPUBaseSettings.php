@@ -4,7 +4,7 @@ namespace wpuimporttwitter;
 /*
 Class Name: WPU Base Settings
 Description: A class to handle native settings in WordPress admin
-Version: 0.4.1
+Version: 0.5
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -133,6 +133,13 @@ class WPUBaseSettings {
 
             $options[$id] = $option_id;
         }
+
+        add_settings_error(
+            $this->settings_details['option_id'],
+            $this->settings_details['option_id'] . esc_attr('settings_updated'),
+            __('Settings saved.'),
+            'updated'
+        );
 
         return $options;
     }

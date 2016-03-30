@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.4.2
+Version: 1.4.3
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -52,11 +52,6 @@ class WPUImportTwitter {
         if (!is_admin()) {
             return;
         }
-
-        // Display notices
-        add_action('wpuimporttwitter_admin_notices', array(&$this->messages,
-            'admin_notices'
-        ));
 
         // Settings & admin
         add_action('admin_menu', array(&$this,
@@ -584,7 +579,8 @@ class WPUImportTwitter {
     public function admin_settings() {
 
         echo '<div class="wrap"><h1>' . apply_filters('wpuimporttwitter_admin_page_title', get_admin_page_title()) . '</h1>';
-        do_action('wpuimporttwitter_admin_notices');
+        settings_errors($this->settings_details['option_id']);
+
         echo '<hr />';
 
         if ($this->test_correct_oauth_values()) {

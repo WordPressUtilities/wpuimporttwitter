@@ -4,7 +4,7 @@ namespace wpuimporttwitter;
 /*
 Class Name: WPU Base Messages
 Description: A class to handle messages in WordPress
-Version: 1.1
+Version: 1.2.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -53,7 +53,7 @@ class WPUBaseMessages {
             foreach ($messages as $group_id => $group) {
                 if (is_array($group)) {
                     foreach ($group as $message) {
-                        echo '<div class="' . $group_id . '"><p>' . $message . '</p></div>';
+                        echo '<div class="' . $group_id . ' notice is-dismissible"><p>' . $message . '</p></div>';
                     }
                 }
             }
@@ -63,3 +63,19 @@ class WPUBaseMessages {
         delete_transient($this->transient_msg);
     }
 }
+
+/*
+
+## Load module
+// Messages
+if (is_admin()) {
+    include 'inc/WPUBaseMessages.php';
+    $this->messages = new \wpuimporttwitter\WPUBaseMessages($this->options['plugin_id']);
+}
+
+## Load notices hook
+add_action('wpuimporttwitter_admin_notices', array(&$this->messages,
+    'admin_notices'
+));
+
+*/
