@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.5
+Version: 1.5.1
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -203,12 +203,14 @@ class WPUImportTwitter {
         $sources = $this->extract_sources($settings['sources']);
         $imported_tweets = 0;
         foreach ($sources as $source) {
-            $last_tweets = array();
             if ($source['type'] == 'user') {
                 $last_tweets = $this->get_last_tweets_for_user($source['id']);
             }
             if ($source['type'] == 'tag') {
                 $last_tweets = $this->get_last_tweets_for_tag($source['id']);
+            }
+            if (!isset($last_tweets) || !is_array($last_tweets)) {
+                $last_tweets = array();
             }
             // Get last tweets from Twitter
             $imported_tweets += $this->import_last_tweets($last_tweets, $imported_tweets_ids);
