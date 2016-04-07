@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: WPU Import Twitter\n"
-"POT-Creation-Date: 2016-03-18 16:53+0100\n"
+"POT-Creation-Date: 2016-04-07 14:01+0200\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Darklg <darklg.blog@gmail.com>\n"
 "Language-Team: \n"
@@ -15,156 +15,178 @@ msgstr ""
 "X-Poedit-KeywordsList: __;_e;_x:1,2c\n"
 "X-Poedit-SearchPath-0: ../.\n"
 
-#: .././inc/WPUBaseSettings.php:39 .././wpuimporttwitter.php:96
+#: .././inc/WPUBaseSettings.php:39 .././wpuimporttwitter.php:98
 msgid "Import Settings"
 msgstr "Réglages d'import"
 
-#: .././wpuimporttwitter.php:99
+#: .././inc/WPUBaseSettings.php:140
+msgid "Settings saved."
+msgstr "Réglages enregistrés."
+
+#: .././wpuimporttwitter.php:101
 msgid "Oauth Settings"
 msgstr "Paramètres OAuth"
 
-#: .././wpuimporttwitter.php:105
+#: .././wpuimporttwitter.php:107
 msgid "Sources"
 msgstr "Sources"
 
-#: .././wpuimporttwitter.php:106
+#: .././wpuimporttwitter.php:108
 msgid "One #hashtag or one @user per line."
 msgstr "Un #hashtag ou un @utilisateur par ligne."
 
-#: .././wpuimporttwitter.php:110
+#: .././wpuimporttwitter.php:112
 msgid "Include RTs"
 msgstr "Inclure les RTs"
 
-#: .././wpuimporttwitter.php:111
+#: .././wpuimporttwitter.php:113
 msgid "Include retweets from other accounts by this user."
 msgstr "Inclure des retweets d'autres comptes par cet utilisateur."
 
-#: .././wpuimporttwitter.php:115
+#: .././wpuimporttwitter.php:117
 msgid "Include Replies"
 msgstr "Inclure les Réponses"
 
-#: .././wpuimporttwitter.php:116
+#: .././wpuimporttwitter.php:118
 msgid "Include replies to other accounts by this user."
 msgstr "Inclure les réponses à d'autres comptes par cet utilisateur."
 
-#: .././wpuimporttwitter.php:120
+#: .././wpuimporttwitter.php:122
 msgid "Import as Draft"
 msgstr "Importer comme brouillon"
 
-#: .././wpuimporttwitter.php:121
+#: .././wpuimporttwitter.php:123
 msgid "Import tweets as Drafts, to allow moderation."
-msgstr "Importer les tweets en tant que brouillon, afin de permettre la modération."
+msgstr ""
+"Importer les tweets en tant que brouillon, afin de permettre la modération."
 
-#: .././wpuimporttwitter.php:125
+#: .././wpuimporttwitter.php:127
 msgid "Import images"
 msgstr "Importer les images"
 
-#: .././wpuimporttwitter.php:126
+#: .././wpuimporttwitter.php:128
 msgid "Import attached images."
 msgstr "Importer les images jointes."
 
-#: .././wpuimporttwitter.php:130
+#: .././wpuimporttwitter.php:132
 msgid "Hide on front"
 msgstr "Masquer en front"
 
-#: .././wpuimporttwitter.php:131
+#: .././wpuimporttwitter.php:133
 msgid "Display tweets only in the admin."
 msgstr "Afficher les tweets uniquement dans l'admin."
 
-#: .././wpuimporttwitter.php:136
+#: .././wpuimporttwitter.php:138
 msgid "Access token"
 msgstr "Access token"
 
-#: .././wpuimporttwitter.php:140
+#: .././wpuimporttwitter.php:142
 msgid "Access token secret"
 msgstr "Access token secret"
 
-#: .././wpuimporttwitter.php:144
+#: .././wpuimporttwitter.php:146
 msgid "Consumer key"
 msgstr "Consumer key"
 
-#: .././wpuimporttwitter.php:148
+#: .././wpuimporttwitter.php:150
 msgid "Consumer secret"
 msgstr "Consumer secret"
 
-#: .././wpuimporttwitter.php:175
+#: .././wpuimporttwitter.php:187
 msgid "Twitter tag"
 msgstr "Tag Twitter"
 
-#: .././wpuimporttwitter.php:543 .././wpuimporttwitter.php:551
-#: .././wpuimporttwitter.php:615
+#: .././wpuimporttwitter.php:557 .././wpuimporttwitter.php:565
+#: .././wpuimporttwitter.php:639
 msgid "Settings"
 msgstr "Réglages"
 
-#: .././wpuimporttwitter.php:551
+#: .././wpuimporttwitter.php:565
 msgid "Import settings"
 msgstr "Réglages d'import"
 
-#: .././wpuimporttwitter.php:563
+#: .././wpuimporttwitter.php:577
 #, php-format
 msgid "Imported tweets : %s"
 msgstr "Tweets importés : %s"
 
-#: .././wpuimporttwitter.php:565
+#: .././wpuimporttwitter.php:579
 msgid "No new imports"
 msgstr "Aucun nouvel import"
 
-#: .././wpuimporttwitter.php:574
+#: .././wpuimporttwitter.php:588
 msgid "The API works great !"
 msgstr "L'API fonctionne très bien !"
 
-#: .././wpuimporttwitter.php:576
+#: .././wpuimporttwitter.php:590
 msgid "The credentials seems invalid or the user never tweeted."
-msgstr "Les identifiants semblent incorrects ou l'utilisateur n'a jamais tweeté."
+msgstr ""
+"Les identifiants semblent incorrects ou l'utilisateur n'a jamais tweeté."
 
-#: .././wpuimporttwitter.php:592
+#: .././wpuimporttwitter.php:608
 msgid "Tools"
 msgstr "Outils"
 
-#: .././wpuimporttwitter.php:602
+#: .././wpuimporttwitter.php:620
 #, php-format
 msgid "Next automated import in %s’%s’’"
 msgstr "Prochain import automatique dans %s min et %ss"
 
-#: .././wpuimporttwitter.php:606
+#: .././wpuimporttwitter.php:624
 msgid "Import now"
 msgstr "Importer maintenant"
 
-#: .././wpuimporttwitter.php:608
+#: .././wpuimporttwitter.php:626
 msgid "Test API"
 msgstr "Tester l'API"
 
-#: .././wpuimporttwitter.php:619
+#: .././wpuimporttwitter.php:632
+msgid "You need correct IDs!"
+msgstr "Vous avez besoin d'identifiants !"
+
+#: .././wpuimporttwitter.php:633
+#, php-format
+msgid ""
+"Please fill the IDs below or create <a target=\"_blank\" href=\"%s\">a "
+"twitter app</a>."
+msgstr ""
+"Merci de remplir les identifiants ci-dessous ou de créer <a target=\"_blank"
+"\" href=\"%s\">une application twitter</a>."
+
+#: .././wpuimporttwitter.php:643
 msgid "Save Changes"
 msgstr "Sauvegarder les modifications"
 
-#: .././wpuimporttwitter.php:655
+#: .././wpuimporttwitter.php:679
 msgid "Tweet details"
 msgstr "Détails du Tweet"
 
-#: .././wpuimporttwitter.php:659
+#: .././wpuimporttwitter.php:683
 msgid "Original Tweet details"
 msgstr "Détails du tweet d'origine"
 
-#: .././wpuimporttwitter.php:668
+#: .././wpuimporttwitter.php:692
 msgid "Tweet author"
 msgstr "Auteur du Tweet"
 
-#: .././wpuimporttwitter.php:674
+#: .././wpuimporttwitter.php:698
 msgid "Tweet ID"
 msgstr "ID du Tweet"
 
-#: .././wpuimporttwitter.php:678
+#: .././wpuimporttwitter.php:702
 msgid "Original author"
 msgstr "Auteur d'origine"
 
-#: .././wpuimporttwitter.php:683
+#: .././wpuimporttwitter.php:707
 msgid "Original url"
 msgstr "URL d'origine"
 
-#: .././wpuimporttwitter.php:688
+#: .././wpuimporttwitter.php:712
 msgid "Original text"
 msgstr "Texte d'origine"
+
+#~ msgid "You need correct twitter IDs!"
+#~ msgstr "Vous devez ajouter des accè twitter ID !"
 
 #~ msgid "Tweet id"
 #~ msgstr "Id du Tweet"
@@ -179,4 +201,6 @@ msgstr "Texte d'origine"
 #~ msgstr "Nom d’utilisateur"
 
 #~ msgid "Import tweet as Draft, to allow moderation."
-#~ msgstr "Importer les tweets en tant que brouillon, afin de permettre la modération."
+#~ msgstr ""
+#~ "Importer les tweets en tant que brouillon, afin de permettre la "
+#~ "modération."

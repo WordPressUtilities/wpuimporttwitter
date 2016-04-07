@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.5.1
+Version: 1.5.2
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -30,14 +30,8 @@ class WPUImportTwitter {
         add_action('init', array(&$this,
             'init'
         ));
-        add_action('init', array(&$this,
-            'check_cron'
-        ));
-        add_filter('cron_schedules', array(&$this,
-            'add_schedule'
-        ));
         add_action($this->cronhook, array(&$this,
-            'callback_cron'
+            'import'
         ));
     }
 
@@ -163,6 +157,16 @@ class WPUImportTwitter {
         $this->settings_values = get_option($this->settings_details['option_id']);
         // Admin URL
         $this->options['admin_url'] = admin_url('edit.php?post_type=' . $this->post_type . '&page=' . $this->options['plugin_id']);
+
+        // Cron
+        include 'inc/WPUBaseCron.php';
+        $this->cron = new \wpuimporttwitter\WPUBaseCron();
+        $this->cron->init(array(
+            'pluginname' => $this->options['plugin_name'],
+            'cronhook' => $this->cronhook,
+            'croninterval' => $this->cron_interval
+        ));
+        $this->cron->check_cron();
 
     }
 
@@ -622,10 +626,16 @@ class WPUImportTwitter {
             submit_button(__('Test API', 'wpuimporttwitter'), 'primary', 'test_api', false);
             echo '</p>';
             echo '</form>';
-            echo '<hr />';
+        } else {
+            $twitterapp_url = 'https://apps.twitter.com/';
+            echo '<p>';
+            echo '<strong>' . __('You need correct IDs!', 'wpuimporttwitter') . '</strong><br />';
+            echo sprintf(__('Please fill the IDs below or create <a target="_blank" href="%s">a twitter app</a>.', 'wpuimporttwitter'), $twitterapp_url);
+            echo '</p>';
         }
 
         if (current_user_can($this->options['plugin_minusercap'])) {
+            echo '<hr />';
             echo '<h2>' . __('Settings') . '</h2>';
             echo '<form action="' . admin_url('options.php') . '" method="post">';
             settings_fields($this->settings_details['option_id']);
@@ -706,35 +716,9 @@ class WPUImportTwitter {
 
     public function post_meta_column_callback($display_value, $field_id, $post_ID, $field, $value) {
         if ($field_id == 'wpuimporttwitter_screen_name' && !empty($value)) {
-            $display_value = '<div style="margin-bottom:5px;"><img src="https://twitter.com/' . esc_attr($value) . '/profile_image?size=normal" alt="" /></div>' . $display_value;
+            $display_value = '<a style="text-decoration:none;display:inline-block" href="https://twitter.com/' . esc_attr($value) . '" target="_blank"><img style="margin-bottom:5px;" src="https://twitter.com/' . esc_attr($value) . '/profile_image?size=normal" alt="" /><br />' . $display_value . '</a>';
         }
         return $display_value;
-    }
-
-    /* ----------------------------------------------------------
-      Cron
-    ---------------------------------------------------------- */
-
-    public function check_cron() {
-        $cron_interval = get_option('wpuimporttwitter_croninterval');
-        $schedule = wp_next_scheduled($this->cronhook);
-        // If no schedule cron or new interval
-        if (!$schedule || $cron_interval != $this->cron_interval) {
-            $this->install();
-        }
-    }
-
-    public function add_schedule($schedules) {
-        // Adds once weekly to the existing schedules.
-        $schedules['wpuimporttwitter_schedule'] = array(
-            'interval' => $this->cron_interval,
-            'display' => __('Twitter Import')
-        );
-        return $schedules;
-    }
-
-    public function callback_cron() {
-        $this->import();
     }
 
     /* ----------------------------------------------------------
@@ -742,15 +726,12 @@ class WPUImportTwitter {
     ---------------------------------------------------------- */
 
     public function install() {
-        wp_clear_scheduled_hook($this->cronhook);
-        update_option('wpuimporttwitter_croninterval', $this->cron_interval);
-        wp_schedule_event(time() + $this->cron_interval, 'wpuimporttwitter_schedule', $this->cronhook);
         flush_rewrite_rules();
     }
 
     public function deactivation() {
-        wp_clear_scheduled_hook($this->cronhook);
         flush_rewrite_rules();
+        $this->cron->uninstall();
     }
 
     /* ----------------------------------------------------------
@@ -758,6 +739,7 @@ class WPUImportTwitter {
     ---------------------------------------------------------- */
 
     public function uninstall() {
+        $this->cron->uninstall();
         delete_option($this->settings_details['option_id']);
         delete_option('wpuimporttwitter_croninterval');
         delete_post_meta_by_key('wpuimporttwitter_id');
