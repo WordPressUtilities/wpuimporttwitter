@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.5.2
+Version: 1.5.3
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -52,9 +52,6 @@ class WPUImportTwitter {
         add_filter('wputh_post_metas_fields', array(&$this,
             'post_meta_fields'
         ), 10, 1);
-        add_filter('wputh_post_metas_admin_column_content_callback', array(&$this,
-            'post_meta_column_callback'
-        ), 10, 5);
 
         if (!is_admin()) {
             return;
@@ -70,6 +67,13 @@ class WPUImportTwitter {
         add_action('admin_post_wpuimporttwitter_postaction', array(&$this,
             'postAction'
         ));
+        add_filter('wputh_post_metas_admin_column_content_callback', array(&$this,
+            'admin_column_callback'
+        ), 10, 5);
+        add_filter('parse_query', array(&$this,
+            'filter_admin_results'
+        ));
+
     }
 
     public function set_options() {
@@ -186,7 +190,9 @@ class WPUImportTwitter {
         $taxonomies['twitter_tag'] = array(
             'name' => __('Twitter tag', 'wputh'),
             'post_type' => $this->post_type,
-            'hierarchical' => false
+            'hierarchical' => false,
+            'wputh__hide_front' => (isset($this->settings_values['hide_front']) && $this->settings_values['hide_front'] == '1'),
+            'admin_column' => true
         );
         return $taxonomies;
     }
@@ -714,11 +720,24 @@ class WPUImportTwitter {
         return $fields;
     }
 
-    public function post_meta_column_callback($display_value, $field_id, $post_ID, $field, $value) {
+    public function admin_column_callback($display_value, $field_id, $post_ID, $field, $value) {
         if ($field_id == 'wpuimporttwitter_screen_name' && !empty($value)) {
-            $display_value = '<a style="text-decoration:none;display:inline-block" href="https://twitter.com/' . esc_attr($value) . '" target="_blank"><img style="margin-bottom:5px;" src="https://twitter.com/' . esc_attr($value) . '/profile_image?size=normal" alt="" /><br />' . $display_value . '</a>';
+            $url = admin_url('edit.php?post_type=' . $this->post_type . '&wpuimporttwitter_screen_name=' . esc_attr($value));
+            $display_value = '<a style="text-decoration:none;display:inline-block" href="' . $url . '"><img style="margin-bottom:5px;" src="https://twitter.com/' . esc_attr($value) . '/profile_image?size=normal" alt="" /><br />' . $display_value . '</a>';
         }
         return $display_value;
+    }
+
+    public function filter_admin_results($query) {
+        global $pagenow;
+        $type = 'post';
+        if (isset($_GET['post_type'])) {
+            $type = $_GET['post_type'];
+        }
+        if ($this->post_type == $type && is_admin() && $pagenow == 'edit.php' && isset($_GET['wpuimporttwitter_screen_name']) && $_GET['wpuimporttwitter_screen_name'] != '') {
+            $query->query_vars['meta_key'] = 'wpuimporttwitter_screen_name';
+            $query->query_vars['meta_value'] = $_GET['wpuimporttwitter_screen_name'];
+        }
     }
 
     /* ----------------------------------------------------------
