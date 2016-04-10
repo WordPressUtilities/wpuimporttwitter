@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.5.3
+Version: 1.6
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -539,7 +539,7 @@ class WPUImportTwitter {
         // Users
         if (!empty($entities->user_mentions)) {
             foreach ($entities->user_mentions as $user_mention) {
-                $text = str_ireplace('@' . $user_mention->screen_name, '<a class="twitter-users" href="https://twitter.com/' . $user_mention->screen_name . '" title="' . $user_mention->name . '">@' . $user_mention->screen_name . '</a>', $text);
+                $text = str_ireplace('@' . $user_mention->screen_name, '<a class="twitter-users" href="https://twitter.com/' . $user_mention->screen_name . '" title="' . esc_attr($user_mention->name) . '">@' . $user_mention->screen_name . '</a>', $text);
             }
         }
 
@@ -722,8 +722,31 @@ class WPUImportTwitter {
 
     public function admin_column_callback($display_value, $field_id, $post_ID, $field, $value) {
         if ($field_id == 'wpuimporttwitter_screen_name' && !empty($value)) {
-            $url = admin_url('edit.php?post_type=' . $this->post_type . '&wpuimporttwitter_screen_name=' . esc_attr($value));
-            $display_value = '<a style="text-decoration:none;display:inline-block" href="' . $url . '"><img style="margin-bottom:5px;" src="https://twitter.com/' . esc_attr($value) . '/profile_image?size=normal" alt="" /><br />' . $display_value . '</a>';
+            $usernames = array(
+                array(
+                    'name' => $value,
+                    'original' => 1
+                )
+            );
+            $original_screen_name = get_post_meta($post_ID, 'wpuimporttwitter_original_screen_name', 1);
+            if ($value != $original_screen_name) {
+                array_push($usernames, array(
+                    'name' => $original_screen_name,
+                    'original' => 0
+                ));
+            }
+            $display_value = '';
+            foreach ($usernames as $username) {
+                $twitter_url = 'https://twitter.com/' . esc_attr($username['name']) . '/profile_image?size=normal';
+                $url = admin_url('edit.php?post_type=' . $this->post_type . '&wpuimporttwitter_screen_name=' . esc_attr($username['name']));
+                $style = 'text-decoration:none;display:inline-block;font-size:0.9em;margin-right:5px';
+                $content = '<img style="margin-bottom:5px" src="' . $twitter_url . '" alt="" /><br />' . $username['name'];
+                if ($username['original']) {
+                    $display_value .= '<a style="' . $style . '" href="' . $url . '">' . $content . '</a>';
+                } else {
+                    $display_value .= '<span style="' . $style . '">' . $content . '</span>';
+                }
+            }
         }
         return $display_value;
     }
