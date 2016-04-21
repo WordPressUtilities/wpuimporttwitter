@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.6
+Version: 1.7
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -219,6 +219,9 @@ class WPUImportTwitter {
             if ($source['type'] == 'tag') {
                 $last_tweets = $this->get_last_tweets_for_tag($source['id']);
             }
+            if ($source['type'] == 'search') {
+                $last_tweets = $this->get_last_tweets_for_search($source['id']);
+            }
             if (!isset($last_tweets) || !is_array($last_tweets)) {
                 $last_tweets = array();
             }
@@ -247,7 +250,8 @@ class WPUImportTwitter {
     }
 
     public function extract_sources($sources) {
-        $sources = str_replace(array(',', ';', ' '), "\n", $sources);
+        $sources = str_replace("&quot;", '"', $sources);
+        $sources = str_replace(array(',', ';'), "\n", $sources);
         $arr_sources = explode("\n", $sources);
         $final_sources = array();
         foreach ($arr_sources as $source) {
@@ -258,15 +262,18 @@ class WPUImportTwitter {
             $type_source = '';
             if ($source[0] == '@') {
                 $type_source = 'user';
+                $src = substr($src, 1);
             } else if ($source[0] == '#') {
                 $type_source = 'tag';
-            } else {
-                continue;
+                $src = substr($src, 1);
+            } else if ($source[0] == '"') {
+                $type_source = 'search';
+                $src = str_replace('"', '', $src);
             }
             if ($type_source != '') {
                 $final_sources[] = array(
                     'type' => $type_source,
-                    'id' => substr($src, 1)
+                    'id' => $src
                 );
             }
 
@@ -278,6 +285,12 @@ class WPUImportTwitter {
     public function get_last_imported_tweets_ids() {
         global $wpdb;
         return $wpdb->get_col("SELECT meta_value FROM $wpdb->postmeta WHERE meta_key = 'wpuimporttwitter_id' ORDER BY meta_id DESC LIMIT 0,200");
+    }
+
+    public function get_last_tweets_for_search($search = false) {
+        return $this->get_last_tweets_for(array(
+            'q' => urlencode('"' . $search . '"') . ' exclude:retweets'
+        ));
     }
 
     public function get_last_tweets_for_tag($tag = false) {
@@ -427,7 +440,7 @@ class WPUImportTwitter {
     public function create_post_from_tweet($tweet) {
         $tweet_text = $this->apply_entities($tweet['text'], $tweet['entities']);
         $original_tweet_text = $this->apply_entities($tweet['original_text'], $tweet['entities']);
-        $tweet_title = substr(strip_tags($tweet_text), 0, 50);
+        $tweet_title = $this->truncate_text(strip_tags($tweet_text), 60);
 
         // Extract medias
         $medias = array();
@@ -458,7 +471,7 @@ class WPUImportTwitter {
         $tweet_post = array(
             'post_title' => $tweet_title,
             'post_content' => $tweet_text,
-            'post_date' => date('Y-m-d H:i:s', $tweet['time']),
+            'post_date_gmt' => date('Y-m-d H:i:s', $tweet['time']),
             'post_status' => 'publish',
             'post_author' => 1,
             'post_type' => $this->post_type
@@ -740,7 +753,7 @@ class WPUImportTwitter {
                 $twitter_url = 'https://twitter.com/' . esc_attr($username['name']) . '/profile_image?size=normal';
                 $url = admin_url('edit.php?post_type=' . $this->post_type . '&wpuimporttwitter_screen_name=' . esc_attr($username['name']));
                 $style = 'text-decoration:none;display:inline-block;font-size:0.9em;margin-right:5px';
-                $content = '<img style="margin-bottom:5px" src="' . $twitter_url . '" alt="" /><br />' . $username['name'];
+                $content = '<img width="48" height="48" style="margin-bottom:5px" src="' . $twitter_url . '" alt="" /><br />' . $username['name'];
                 if ($username['original']) {
                     $display_value .= '<a style="' . $style . '" href="' . $url . '">' . $content . '</a>';
                 } else {
@@ -761,6 +774,38 @@ class WPUImportTwitter {
             $query->query_vars['meta_key'] = 'wpuimporttwitter_screen_name';
             $query->query_vars['meta_value'] = $_GET['wpuimporttwitter_screen_name'];
         }
+    }
+
+    /* ----------------------------------------------------------
+      Tools
+    ---------------------------------------------------------- */
+
+    public function truncate_text($string, $length, $more = '...') {
+        $_new_string = '';
+        $_maxlen = $length - strlen($more);
+        $_words = explode(' ', $string);
+
+        /* Add word to word */
+        foreach ($_words as $_word) {
+            if (strlen($_word) + strlen($_new_string) >= $_maxlen) {
+                break;
+            }
+
+            /* Separate by spaces */
+            if (!empty($_new_string)) {
+                $_new_string .= ' ';
+            }
+            $_new_string .= $_word;
+        }
+
+        /* If new string is shorter than original */
+        if (strlen($_new_string) < strlen($string)) {
+
+            /* Add the after text */
+            $_new_string .= $more;
+        }
+
+        return $_new_string;
     }
 
     /* ----------------------------------------------------------
