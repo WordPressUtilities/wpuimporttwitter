@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.7
+Version: 1.7.1
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -114,12 +114,12 @@ class WPUImportTwitter {
             ),
             'include_rts' => array(
                 'label' => __('Include RTs', 'wpuimporttwitter'),
-                'label_check' => __('Include retweets from other accounts by this user.', 'wpuimporttwitter'),
+                'label_check' => __('Include retweets from other accounts by these users.', 'wpuimporttwitter'),
                 'type' => 'checkbox'
             ),
             'include_replies' => array(
                 'label' => __('Include Replies', 'wpuimporttwitter'),
-                'label_check' => __('Include replies to other accounts by this user.', 'wpuimporttwitter'),
+                'label_check' => __('Include replies to other accounts by these users.', 'wpuimporttwitter'),
                 'type' => 'checkbox'
             ),
             'import_draft' => array(
@@ -211,6 +211,10 @@ class WPUImportTwitter {
         }
 
         $sources = $this->extract_sources($settings['sources']);
+        if (empty($sources) && (!defined('DOING_CRON') || !DOING_CRON)) {
+            $this->messages->set_message('empty_sources', __('The sources are invalid or empty. Did you follow the rules below the sources box ?', 'wpuimporttwitter'), 'error');
+            return false;
+        }
         $imported_tweets = 0;
         foreach ($sources as $source) {
             if ($source['type'] == 'user') {
@@ -592,15 +596,16 @@ class WPUImportTwitter {
 
         if (isset($_POST['import_now'])) {
             $nb_imports = $this->import();
-            if ($nb_imports > 0) {
-                $this->messages->set_message('imported_nb', sprintf(__('Imported tweets : %s', 'wpuimporttwitter'), $nb_imports));
-            } else {
-                $this->messages->set_message('imported_0', __('No new imports', 'wpuimporttwitter'), 'created');
+            if (is_numeric($nb_imports)) {
+                if ($nb_imports > 0) {
+                    $this->messages->set_message('imported_nb', sprintf(__('Imported tweets : %s', 'wpuimporttwitter'), $nb_imports));
+                } else {
+                    $this->messages->set_message('imported_0', __('No new imports', 'wpuimporttwitter'), 'created');
+                }
             }
         }
 
         if (isset($_POST['test_api'])) {
-
             $last_tweets = $this->get_last_tweets_for_user('twitter');
 
             if (is_array($last_tweets) && !empty($last_tweets)) {
