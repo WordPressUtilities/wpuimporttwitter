@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.7.1
+Version: 1.8
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -32,6 +32,9 @@ class WPUImportTwitter {
         ));
         add_action($this->cronhook, array(&$this,
             'import'
+        ));
+        add_action($this->cronhook, array(&$this,
+            'clean_old_posts'
         ));
     }
 
@@ -111,6 +114,11 @@ class WPUImportTwitter {
                 'label' => __('Sources', 'wpuimporttwitter'),
                 'help' => __('One #hashtag or one @user per line.', 'wpuimporttwitter'),
                 'type' => 'textarea'
+            ),
+            'max_nb_posts' => array(
+                'label' => __('Max number of posts', 'wpuimporttwitter'),
+                'help' => __('Max number of posts kept. The old ones will automatically be deleted.', 'wpuimporttwitter'),
+                'type' => 'number'
             ),
             'include_rts' => array(
                 'label' => __('Include RTs', 'wpuimporttwitter'),
@@ -197,7 +205,50 @@ class WPUImportTwitter {
         return $taxonomies;
     }
 
+    public function clean_old_posts() {
+        @set_time_limit(0);
+        $settings = get_option($this->settings_details['option_id']);
+
+        if (!isset($settings['max_nb_posts']) || !is_numeric($settings['max_nb_posts'])) {
+            return;
+        }
+
+        if ($settings['max_nb_posts'] < 1) {
+            return;
+        }
+
+        $old_tweets = get_posts(array(
+            'post_type' => $this->post_type,
+            'posts_per_page' => 150,
+            'offset' => $settings['max_nb_posts'],
+            'post_status' => 'any'
+        ));
+        if (is_array($old_tweets)) {
+            foreach ($old_tweets as $post) {
+                $this->delete_associated_media($post->ID);
+                wp_delete_post($post->ID, true);
+            }
+        }
+    }
+
+    public function delete_associated_media($id) {
+        /* http://wordpress.stackexchange.com/a/134917 */
+        $media = get_children(array(
+            'post_parent' => $id,
+            'post_type' => 'attachment'
+        ));
+
+        if (empty($media)) {
+            return;
+        }
+
+        foreach ($media as $file) {
+            wp_delete_attachment($file->ID);
+        }
+    }
+
     public function import() {
+        @set_time_limit(0);
         $settings = get_option($this->settings_details['option_id']);
 
         // Get ids from last imported tweets

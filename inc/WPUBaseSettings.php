@@ -4,7 +4,7 @@ namespace wpuimporttwitter;
 /*
 Class Name: WPU Base Settings
 Description: A class to handle native settings in WordPress admin
-Version: 0.5
+Version: 0.5.4
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -23,6 +23,28 @@ class WPUBaseSettings {
         add_filter('option_page_capability_' . $this->settings_details['option_id'], array(&$this,
             'set_min_capability'
         ));
+    }
+
+    public function get_settings() {
+        $opt = get_option($this->settings_details['option_id']);
+        if (!is_array($opt)) {
+            $opt = array();
+        }
+        return $opt;
+    }
+
+    public function get_setting($id) {
+        $opt = $this->get_settings();
+        if (isset($opt[$id])) {
+            return $opt[$id];
+        }
+        return false;
+    }
+
+    public function update_setting($id, $value) {
+        $opt = $this->get_settings();
+        $opt[$id] = $value;
+        update_option($this->settings_details['option_id'], $opt);
     }
 
     public function set_min_capability() {
@@ -104,14 +126,28 @@ class WPUBaseSettings {
     public function options_validate($input) {
         $options = get_option($this->settings_details['option_id']);
         foreach ($this->settings as $id => $setting) {
+
+            // If regex : use it to validate the field
+            if (isset($setting['regex'])) {
+                if (isset($input[$id]) && preg_match($setting['regex'], $input[$id])) {
+                    $options[$id] = $input[$id];
+                }
+                continue;
+            }
+
             // Set a default value
             // - if not sent
             // - if user is not allowed
-            if (!isset($input[$id]) || !current_user_can($setting['user_cap'])) {
-                $input[$id] = isset($options[$id]) ? $options[$id] : '0';
+            if ($setting['type'] != 'checkbox') {
+                if (!isset($input[$id]) || !current_user_can($setting['user_cap'])) {
+                    $input[$id] = isset($options[$id]) ? $options[$id] : '0';
+                }
+                $option_id = $input[$id];
             }
-            $option_id = $input[$id];
             switch ($setting['type']) {
+            case 'checkbox':
+                $option_id = isset($input[$id]) ? '1' : '0';
+                break;
             case 'email':
                 if (filter_var($input[$id], FILTER_VALIDATE_EMAIL) === false) {
                     $option_id = '';
@@ -149,6 +185,7 @@ class WPUBaseSettings {
         $options = get_option($option_id);
         $name = ' name="' . $option_id . '[' . $args['id'] . ']" ';
         $id = ' id="' . $args['id'] . '" ';
+        $value = isset($options[$args['id']]) ? $options[$args['id']] : '';
 
         switch ($args['type']) {
         case 'checkbox':
@@ -156,17 +193,23 @@ class WPUBaseSettings {
             echo '<label><input type="checkbox" ' . $name . ' ' . $id . ' ' . checked($checked_val, '1', 0) . ' value="1" /> ' . $args['label_check'] . '</label>';
             break;
         case 'textarea':
-            echo '<textarea ' . $name . ' ' . $id . ' cols="50" rows="5">' . esc_attr($options[$args['id']]) . '</textarea>';
+            echo '<textarea ' . $name . ' ' . $id . ' cols="50" rows="5">' . esc_attr($value) . '</textarea>';
             break;
         case 'url':
         case 'number':
         case 'email':
         case 'text':
-            echo '<input ' . $name . ' ' . $id . ' type="' . $args['type'] . '" value="' . esc_attr($options[$args['id']]) . '" />';
+            echo '<input ' . $name . ' ' . $id . ' type="' . $args['type'] . '" value="' . esc_attr($value) . '" />';
         }
         if (!empty($args['help'])) {
             echo '<div><small>' . $args['help'] . '</small></div>';
         }
+    }
+
+    public static function isRegex($str0) {
+        /* Thx http://stackoverflow.com/a/16098097 */
+        $regex = "/^\/[\s\S]+\/$/";
+        return preg_match($regex, $str0);
     }
 }
 
