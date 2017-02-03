@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: WPU Import Twitter\n"
-"POT-Creation-Date: 2016-08-31 22:59+0200\n"
+"POT-Creation-Date: 2017-02-03 17:40+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Darklg <darklg.blog@gmail.com>\n"
 "Language-Team: \n"
@@ -9,13 +9,13 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.8.4\n"
+"X-Generator: Poedit 1.8.11\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 "X-Poedit-Basepath: .\n"
 "X-Poedit-KeywordsList: __;_e;_x:1,2c\n"
 "X-Poedit-SearchPath-0: ../.\n"
 
-#: .././inc/WPUBaseSettings.php:61 .././wpuimporttwitter.php:105
+#: .././inc/WPUBaseSettings.php:61 .././wpuimporttwitter.php:131
 msgid "Import Settings"
 msgstr "Réglages d'import"
 
@@ -23,90 +23,111 @@ msgstr "Réglages d'import"
 msgid "Settings saved."
 msgstr "Réglages enregistrés."
 
-#: .././wpuimporttwitter.php:108
+#: .././wpuimporttwitter.php:105
+#, php-format
+msgid ""
+"The plugin <b>%s</b> depends on the <b>%s</b> plugin. Please install and "
+"activate it."
+msgstr ""
+"Le plugin <b>%s</b> dépend du plugin <b>%s</b>. Merci de installer et "
+"l’activer."
+
+#: .././wpuimporttwitter.php:134
 msgid "Oauth Settings"
 msgstr "Paramètres OAuth"
 
-#: .././wpuimporttwitter.php:114
+#: .././wpuimporttwitter.php:140
 msgid "Sources"
 msgstr "Sources"
 
-#: .././wpuimporttwitter.php:115
+#: .././wpuimporttwitter.php:141
 msgid "One #hashtag or one @user per line."
 msgstr "Un #hashtag ou un @utilisateur par ligne."
 
-#: .././wpuimporttwitter.php:119
+#: .././wpuimporttwitter.php:145
 msgid "Max number of posts"
 msgstr "Nombre d'articles max"
 
-#: .././wpuimporttwitter.php:120
+#: .././wpuimporttwitter.php:146
 msgid "Max number of posts kept. The old ones will automatically be deleted."
 msgstr ""
 "Nombre maximum de messages conservés. Les anciens seront automatiquement "
 "supprimés."
 
-#: .././wpuimporttwitter.php:124
+#: .././wpuimporttwitter.php:150
 msgid "Include RTs"
 msgstr "Inclure les RTs"
 
-#: .././wpuimporttwitter.php:125
+#: .././wpuimporttwitter.php:151
 msgid "Include retweets from other accounts by these users."
 msgstr "Inclure des retweets d'autres comptes par ces utilisateurs."
 
-#: .././wpuimporttwitter.php:129
+#: .././wpuimporttwitter.php:155
 msgid "Include Replies"
 msgstr "Inclure les Réponses"
 
-#: .././wpuimporttwitter.php:130
+#: .././wpuimporttwitter.php:156
 msgid "Include replies to other accounts by these users."
 msgstr "Inclure les réponses à d'autres comptes par ces utilisateurs."
 
-#: .././wpuimporttwitter.php:134
+#: .././wpuimporttwitter.php:160
 msgid "Import as Draft"
 msgstr "Importer comme brouillon"
 
-#: .././wpuimporttwitter.php:135
+#: .././wpuimporttwitter.php:161
 msgid "Import tweets as Drafts, to allow moderation."
 msgstr ""
 "Importer les tweets en tant que brouillon, afin de permettre la modération."
 
-#: .././wpuimporttwitter.php:139
+#: .././wpuimporttwitter.php:165
 msgid "Import images"
 msgstr "Importer les images"
 
-#: .././wpuimporttwitter.php:140
+#: .././wpuimporttwitter.php:166
 msgid "Import attached images."
 msgstr "Importer les images jointes."
 
-#: .././wpuimporttwitter.php:144
+#: .././wpuimporttwitter.php:170
 msgid "Hide on front"
 msgstr "Masquer en front"
 
-#: .././wpuimporttwitter.php:145
+#: .././wpuimporttwitter.php:171
 msgid "Display tweets only in the admin."
 msgstr "Afficher les tweets uniquement dans l'admin."
 
-#: .././wpuimporttwitter.php:150
+#: .././wpuimporttwitter.php:176
 msgid "Access token"
 msgstr "Access token"
 
-#: .././wpuimporttwitter.php:154
+#: .././wpuimporttwitter.php:180
 msgid "Access token secret"
 msgstr "Access token secret"
 
-#: .././wpuimporttwitter.php:158
+#: .././wpuimporttwitter.php:184
 msgid "Consumer key"
 msgstr "Consumer key"
 
-#: .././wpuimporttwitter.php:162
+#: .././wpuimporttwitter.php:188
 msgid "Consumer secret"
 msgstr "Consumer secret"
 
-#: .././wpuimporttwitter.php:199
+#: .././wpuimporttwitter.php:214
+msgid "Tweet"
+msgstr "Tweet"
+
+#: .././wpuimporttwitter.php:215
+msgid "Tweets"
+msgstr "Tweets"
+
+#: .././wpuimporttwitter.php:225
 msgid "Twitter tag"
 msgstr "Tag Twitter"
 
-#: .././wpuimporttwitter.php:266
+#: .././wpuimporttwitter.php:226
+msgid "Twitter tags"
+msgstr "Tags Twitter"
+
+#: .././wpuimporttwitter.php:293
 msgid ""
 "The sources are invalid or empty. Did you follow the rules below the sources "
 "box ?"
@@ -114,55 +135,55 @@ msgstr ""
 "Les sources sont invalides ou vides. Avez-vous suivi les règles sous le "
 "champ sources ?"
 
-#: .././wpuimporttwitter.php:631 .././wpuimporttwitter.php:639
-#: .././wpuimporttwitter.php:714
+#: .././wpuimporttwitter.php:676 .././wpuimporttwitter.php:684
+#: .././wpuimporttwitter.php:759
 msgid "Settings"
 msgstr "Réglages"
 
-#: .././wpuimporttwitter.php:639
+#: .././wpuimporttwitter.php:684
 msgid "Import settings"
 msgstr "Réglages d'import"
 
-#: .././wpuimporttwitter.php:652
+#: .././wpuimporttwitter.php:697
 #, php-format
 msgid "Imported tweets : %s"
 msgstr "Tweets importés : %s"
 
-#: .././wpuimporttwitter.php:654
+#: .././wpuimporttwitter.php:699
 msgid "No new imports"
 msgstr "Aucun nouvel import"
 
-#: .././wpuimporttwitter.php:663
+#: .././wpuimporttwitter.php:708
 msgid "The API works great !"
 msgstr "L'API fonctionne très bien !"
 
-#: .././wpuimporttwitter.php:665
+#: .././wpuimporttwitter.php:710
 msgid "The credentials seems invalid or the user never tweeted."
 msgstr ""
 "Les identifiants semblent incorrects ou l'utilisateur n'a jamais tweeté."
 
-#: .././wpuimporttwitter.php:683
+#: .././wpuimporttwitter.php:728
 msgid "Tools"
 msgstr "Outils"
 
-#: .././wpuimporttwitter.php:695
+#: .././wpuimporttwitter.php:740
 #, php-format
 msgid "Next automated import in %s’%s’’"
 msgstr "Prochain import automatique dans %s min et %ss"
 
-#: .././wpuimporttwitter.php:699
+#: .././wpuimporttwitter.php:744
 msgid "Import now"
 msgstr "Importer maintenant"
 
-#: .././wpuimporttwitter.php:701
+#: .././wpuimporttwitter.php:746
 msgid "Test API"
 msgstr "Tester l'API"
 
-#: .././wpuimporttwitter.php:707
+#: .././wpuimporttwitter.php:752
 msgid "You need correct IDs!"
 msgstr "Vous avez besoin d'identifiants !"
 
-#: .././wpuimporttwitter.php:708
+#: .././wpuimporttwitter.php:753
 #, php-format
 msgid ""
 "Please fill the IDs below or create <a target=\"_blank\" href=\"%s\">a "
@@ -171,35 +192,35 @@ msgstr ""
 "Merci de remplir les identifiants ci-dessous ou de créer <a target=\"_blank"
 "\" href=\"%s\">une application twitter</a>."
 
-#: .././wpuimporttwitter.php:718
+#: .././wpuimporttwitter.php:763
 msgid "Save Changes"
 msgstr "Sauvegarder les modifications"
 
-#: .././wpuimporttwitter.php:754
+#: .././wpuimporttwitter.php:799
 msgid "Tweet details"
 msgstr "Détails du Tweet"
 
-#: .././wpuimporttwitter.php:758
+#: .././wpuimporttwitter.php:803
 msgid "Original Tweet details"
 msgstr "Détails du tweet d'origine"
 
-#: .././wpuimporttwitter.php:767
+#: .././wpuimporttwitter.php:812
 msgid "Tweet author"
 msgstr "Auteur du Tweet"
 
-#: .././wpuimporttwitter.php:773
+#: .././wpuimporttwitter.php:818
 msgid "Tweet ID"
 msgstr "ID du Tweet"
 
-#: .././wpuimporttwitter.php:777
+#: .././wpuimporttwitter.php:822
 msgid "Original author"
 msgstr "Auteur d'origine"
 
-#: .././wpuimporttwitter.php:782
+#: .././wpuimporttwitter.php:827
 msgid "Original url"
 msgstr "URL d'origine"
 
-#: .././wpuimporttwitter.php:787
+#: .././wpuimporttwitter.php:832
 msgid "Original text"
 msgstr "Texte d'origine"
 

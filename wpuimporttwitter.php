@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.8
+Version: 1.9
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -29,6 +29,9 @@ class WPUImportTwitter {
         ));
         add_action('init', array(&$this,
             'init'
+        ));
+        add_action('init', array(&$this,
+            'check_config'
         ));
         add_action($this->cronhook, array(&$this,
             'import'
@@ -77,6 +80,29 @@ class WPUImportTwitter {
             'filter_admin_results'
         ));
 
+    }
+
+    /* ----------------------------------------------------------
+      Check config
+    ---------------------------------------------------------- */
+
+    public function check_config() {
+        if (!is_admin()) {
+            return;
+        }
+        include_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+        // Check if WPU Post types & taxonomies is active
+        if (!is_plugin_active('wpuposttypestaxos/wpuposttypestaxos.php')) {
+            add_action('admin_notices', array(&$this,
+                'set_error_missing_wpuposttypestaxos'
+            ));
+        }
+    }
+
+    public function set_error_missing_wpuposttypestaxos() {
+        $plugin_link = '<a target="_blank" href="https://github.com/WordPressUtilities/wpuposttypestaxos">WPU Post types & taxonomies</a>';
+        echo '<div class="error"><p>' . sprintf(__('The plugin <b>%s</b> depends on the <b>%s</b> plugin. Please install and activate it.', 'wpuimporttwitter'), 'WPU Import Twitter', $plugin_link) . '</p></div>';
     }
 
     public function set_options() {
@@ -185,8 +211,8 @@ class WPUImportTwitter {
     public function create_posttypes($post_types) {
         $post_types[$this->post_type] = array(
             'menu_icon' => 'dashicons-twitter',
-            'name' => 'Tweet',
-            'plural' => 'Tweets',
+            'name' => __('Tweet', 'wpuimporttwitter'),
+            'plural' => __('Tweets', 'wpuimporttwitter'),
             'female' => 0,
             'taxonomies' => array('twitter_tag'),
             'wputh__hide_front' => (isset($this->settings_values['hide_front']) && $this->settings_values['hide_front'] == '1')
@@ -196,7 +222,8 @@ class WPUImportTwitter {
 
     public function create_taxonomies($taxonomies) {
         $taxonomies['twitter_tag'] = array(
-            'name' => __('Twitter tag', 'wputh'),
+            'name' => __('Twitter tag', 'wpuimporttwitter'),
+            'plural' => __('Twitter tags', 'wpuimporttwitter'),
             'post_type' => $this->post_type,
             'hierarchical' => false,
             'wputh__hide_front' => (isset($this->settings_values['hide_front']) && $this->settings_values['hide_front'] == '1'),
@@ -414,6 +441,11 @@ class WPUImportTwitter {
         if ($this->debug && file_exists($debug_file)) {
             error_log('Using debug file');
             $response = file_get_contents($debug_file);
+            $response_j = json_decode($response);
+            if (!is_object($response_j)) {
+                error_log('Invalid debug file');
+                $response = false;
+            }
         }
 
         if (!$response) {
@@ -488,6 +520,9 @@ class WPUImportTwitter {
                 'original_text' => $original_text
             );
 
+            if (property_exists($tweet, 'extended_entities')) {
+                $tweets[$tweet->id_str]['extended_entities'] = $tweet->extended_entities;
+            }
         }
         return $tweets;
     }
@@ -501,14 +536,24 @@ class WPUImportTwitter {
         $medias = array();
         if (property_exists($tweet['entities'], 'media') && count($tweet['entities']->media) > 0) {
             foreach ($tweet['entities']->media as $media) {
-                if ($media->type == 'photo') {
+                if ($media->type == 'photo' && !in_array($media->media_url, $medias)) {
                     $medias[] = $media->media_url;
                 }
             }
         }
 
-        // Extract hashtags
+        // Extended entities
+        if (isset($tweet['extended_entities'])) {
+            if (property_exists($tweet['extended_entities'], 'media') && count($tweet['extended_entities']->media) > 0) {
+                foreach ($tweet['extended_entities']->media as $media) {
+                    if ($media->type == 'photo' && !in_array($media->media_url, $medias)) {
+                        $medias[] = $media->media_url;
+                    }
+                }
+            }
+        }
 
+        // Extract hashtags
         $hashtags = array();
         if (property_exists($tweet['entities'], 'hashtags') && count($tweet['entities']->hashtags) > 0) {
             foreach ($tweet['entities']->hashtags as $hashtag) {
