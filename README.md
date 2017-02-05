@@ -54,9 +54,9 @@ TODO
 * [x] Hook for post type id.
 * [x] Store if is RT.
 * [x] Store if is Reply.
+* [x] Hook for cron interval.
 * [ ] Import smilies.
 * [ ] Add a help link to twitter developper website.
-* [ ] Hook for cron interval.
 * [ ] Remove Post types & taxos dependency.
 * [ ] Delete empty tags : DELETE FROM wp_term_taxonomy WHERE count = 0 and taxonomy = 'twitter_tag'
 

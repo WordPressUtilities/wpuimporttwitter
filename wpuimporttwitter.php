@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.9
+Version: 1.9.1
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -15,6 +15,7 @@ Required plugins: WPU Post Types & Taxos
 class WPUImportTwitter {
     private $debug = false;
     private $messages = array();
+    private $imported_tweets_ids = array();
     public $cronhook = 'wpuimporttwitter__cron_hook';
 
     public function __construct() {
@@ -279,7 +280,7 @@ class WPUImportTwitter {
         $settings = get_option($this->settings_details['option_id']);
 
         // Get ids from last imported tweets
-        $imported_tweets_ids = $this->get_last_imported_tweets_ids();
+        $this->imported_tweets_ids = $this->get_last_imported_tweets_ids();
 
         // Try to convert if old option model is used
         if (!isset($settings['sources']) && isset($settings['screen_name'])) {
@@ -308,21 +309,22 @@ class WPUImportTwitter {
                 $last_tweets = array();
             }
             // Get last tweets from Twitter
-            $imported_tweets += $this->import_last_tweets($last_tweets, $imported_tweets_ids);
+            $imported_tweets += $this->import_last_tweets($last_tweets);
         }
 
         return $imported_tweets;
     }
 
-    public function import_last_tweets($last_tweets, $imported_tweets_ids) {
+    public function import_last_tweets($last_tweets) {
         $nb_imports = 0;
 
         // Exclude tweets already imported
         foreach ($last_tweets as $tweet) {
-            if (!in_array($tweet['id'], $imported_tweets_ids)) {
+            if (!in_array($tweet['id'], $this->imported_tweets_ids)) {
                 // Create a post for each new tweet
                 $post_id = $this->create_post_from_tweet($tweet);
                 if (is_numeric($post_id) && $post_id > 0) {
+                    $this->imported_tweets_ids[] = $tweet['id'];
                     $nb_imports++;
                 }
             }
