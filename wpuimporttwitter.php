@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.9.1
+Version: 1.10
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -13,7 +13,8 @@ Required plugins: WPU Post Types & Taxos
 */
 
 class WPUImportTwitter {
-    private $debug = false;
+    private $use_debug_file = false;
+    private $log = false;
     private $messages = array();
     private $imported_tweets_ids = array();
     public $cronhook = 'wpuimporttwitter__cron_hook';
@@ -276,8 +277,17 @@ class WPUImportTwitter {
     }
 
     public function import() {
+        $this->error_log('Launch import');
         @set_time_limit(0);
         $settings = get_option($this->settings_details['option_id']);
+
+        /* Set a transient  */
+        if (false === ($wpuimporttwitter_import_running = get_transient('wpuimporttwitter_import_running'))) {
+            set_transient('wpuimporttwitter_import_running', 1, 60 * 10);
+        } else {
+            $this->error_log('An import is already running');
+            return;
+        }
 
         // Get ids from last imported tweets
         $this->imported_tweets_ids = $this->get_last_imported_tweets_ids();
@@ -291,9 +301,12 @@ class WPUImportTwitter {
 
         $sources = $this->extract_sources($settings['sources']);
         if (empty($sources) && (!defined('DOING_CRON') || !DOING_CRON)) {
+            $this->error_log('Sources are invalid');
             $this->messages->set_message('empty_sources', __('The sources are invalid or empty. Did you follow the rules below the sources box ?', 'wpuimporttwitter'), 'error');
             return false;
         }
+
+        $this->error_log('Parsing sources');
         $imported_tweets = 0;
         foreach ($sources as $source) {
             if ($source['type'] == 'user') {
@@ -308,9 +321,14 @@ class WPUImportTwitter {
             if (!isset($last_tweets) || !is_array($last_tweets)) {
                 $last_tweets = array();
             }
+
+            $this->error_log('Importing last tweets for ' . $source['type'] . ':' . $source['id']);
             // Get last tweets from Twitter
             $imported_tweets += $this->import_last_tweets($last_tweets);
         }
+
+        /* Allow a new import */
+        delete_transient('wpuimporttwitter_import_running');
 
         return $imported_tweets;
     }
@@ -320,13 +338,15 @@ class WPUImportTwitter {
 
         // Exclude tweets already imported
         foreach ($last_tweets as $tweet) {
-            if (!in_array($tweet['id'], $this->imported_tweets_ids)) {
-                // Create a post for each new tweet
-                $post_id = $this->create_post_from_tweet($tweet);
-                if (is_numeric($post_id) && $post_id > 0) {
-                    $this->imported_tweets_ids[] = $tweet['id'];
-                    $nb_imports++;
-                }
+            if (in_array($tweet['id'], $this->imported_tweets_ids)) {
+                $this->error_log('The tweet #' . $tweet['id'] . ' is already imported.');
+                continue;
+            }
+            // Create a post for each new tweet
+            $post_id = $this->create_post_from_tweet($tweet);
+            if (is_numeric($post_id) && $post_id > 0) {
+                $this->imported_tweets_ids[] = $tweet['id'];
+                $nb_imports++;
             }
         }
         return $nb_imports;
@@ -368,7 +388,7 @@ class WPUImportTwitter {
 
     public function get_last_imported_tweets_ids() {
         global $wpdb;
-        return $wpdb->get_col("SELECT meta_value FROM $wpdb->postmeta WHERE meta_key = 'wpuimporttwitter_id' ORDER BY meta_id DESC LIMIT 0,200");
+        return $wpdb->get_col("SELECT meta_value FROM $wpdb->postmeta WHERE meta_key = 'wpuimporttwitter_id' ORDER BY meta_id DESC LIMIT 0,500");
     }
 
     public function get_last_tweets_for_search($search = false) {
@@ -440,12 +460,12 @@ class WPUImportTwitter {
         $debug_file = ABSPATH . '/tweets.txt';
 
         $response = false;
-        if ($this->debug && file_exists($debug_file)) {
-            error_log('Using debug file');
+        if ($this->use_debug_file && file_exists($debug_file)) {
+            $this->error_log('Using debug file');
             $response = file_get_contents($debug_file);
             $response_j = json_decode($response);
             if (!is_object($response_j)) {
-                error_log('Invalid debug file');
+                $this->error_log('Invalid debug file');
                 $response = false;
             }
         }
@@ -455,8 +475,8 @@ class WPUImportTwitter {
             curl_setopt_array($feed, $options);
             $response = curl_exec($feed);
             curl_close($feed);
-            if ($this->debug) {
-                error_log('Caching in debug file');
+            if ($this->use_debug_file) {
+                $this->error_log('Caching in debug file');
                 file_put_contents($debug_file, $response);
             }
         }
@@ -579,6 +599,8 @@ class WPUImportTwitter {
             'post_type' => $this->post_type
         );
 
+        $this->error_log('Create a tweet for ' . $tweet['screen_name'] . ' / id:' . $tweet['id']);
+
         // Insert the post into the database
         $post_id = wp_insert_post($tweet_post);
 
@@ -602,6 +624,7 @@ class WPUImportTwitter {
 
         if (is_array($settings) && isset($settings['import_images']) && $settings['import_images'] == '1') {
             $this->import_medias($post_id, $medias);
+            $this->error_log('Import medias for #' . $post_id);
         }
 
         return $post_id;
@@ -909,6 +932,13 @@ class WPUImportTwitter {
         }
 
         return $_new_string;
+    }
+
+    public function error_log($message) {
+        if (!$this->log || !WP_DEBUG) {
+            return;
+        }
+        error_log('Twitter Import - ' . $message);
     }
 
     /* ----------------------------------------------------------
