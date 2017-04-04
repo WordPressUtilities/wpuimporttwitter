@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.10
+Version: 1.11
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -30,9 +30,12 @@ class WPUImportTwitter {
             'set_options'
         ));
         add_action('init', array(&$this,
-            'init'
+            'register_taxo_type'
         ));
         add_action('init', array(&$this,
+            'init'
+        ));
+        add_action('current_screen', array(&$this,
             'check_config'
         ));
         add_action($this->cronhook, array(&$this,
@@ -47,13 +50,39 @@ class WPUImportTwitter {
         load_plugin_textdomain('wpuimporttwitter', false, dirname(plugin_basename(__FILE__)) . '/lang/');
     }
 
+    public function register_taxo_type() {
+
+        /* Post type */
+        register_post_type($this->post_type, apply_filters('wpuimporttwitter__post_type_infos', array(
+            'public' => (!isset($this->settings_values['hide_front']) || $this->settings_values['hide_front'] != '1'),
+            'show_in_nav_menus' => true,
+            'show_ui' => true,
+            'menu_icon' => 'dashicons-twitter',
+            'name' => __('Tweet', 'wpuimporttwitter'),
+            'taxonomies' => array('twitter_tag'),
+            'supports' => array(
+                'title',
+                'editor',
+                'thumbnail'
+            )
+        )));
+
+        /* Taxonomy */
+        register_taxonomy(
+            'twitter_tag',
+            $this->post_type,
+            apply_filters('wpuimporttwitter__taxonomy_infos', array(
+                'label' => __('Twitter tags', 'wpuimporttwitter'),
+                'hierarchical' => false,
+                'show_admin_column' => true,
+                'show_in_nav_menus' => true,
+                'show_ui' => true,
+                'public' => (!isset($this->settings_values['hide_front']) || $this->settings_values['hide_front'] != '1')
+            ))
+        );
+    }
+
     public function init() {
-        add_filter('wputh_get_posttypes', array(&$this,
-            'create_posttypes'
-        ), 10, 1);
-        add_filter('wputh_get_taxonomies', array(&$this,
-            'create_taxonomies'
-        ), 10, 1);
         add_filter('wputh_post_metas_boxes', array(&$this,
             'post_meta_boxes'
         ), 10, 1);
@@ -92,19 +121,26 @@ class WPUImportTwitter {
         if (!is_admin()) {
             return;
         }
+
+        $screen = get_current_screen();
+
+        if (!is_object($screen) || $screen->base != 'plugins') {
+            return;
+        }
+
         include_once ABSPATH . 'wp-admin/includes/plugin.php';
 
         // Check if WPU Post types & taxonomies is active
-        if (!is_plugin_active('wpuposttypestaxos/wpuposttypestaxos.php')) {
+        if (!is_plugin_active('wpupostmetas/wpupostmetas.php')) {
             add_action('admin_notices', array(&$this,
-                'set_error_missing_wpuposttypestaxos'
+                'set_error_missing_wpupostmetas'
             ));
         }
     }
 
-    public function set_error_missing_wpuposttypestaxos() {
-        $plugin_link = '<a target="_blank" href="https://github.com/WordPressUtilities/wpuposttypestaxos">WPU Post types & taxonomies</a>';
-        echo '<div class="error"><p>' . sprintf(__('The plugin <b>%s</b> depends on the <b>%s</b> plugin. Please install and activate it.', 'wpuimporttwitter'), 'WPU Import Twitter', $plugin_link) . '</p></div>';
+    public function set_error_missing_wpupostmetas() {
+        $plugin_link = '<a target="_blank" href="https://github.com/WordPressUtilities/wpupostmetas">WPU Post Metas</a>';
+        echo '<div class="update-nag">' . sprintf(__('The plugin <b>%s</b> works better with the <b>%s</b> plugin. Please install and activate it.', 'wpuimporttwitter'), 'WPU Import Twitter', $plugin_link) . '</div>';
     }
 
     public function set_options() {
@@ -208,30 +244,6 @@ class WPUImportTwitter {
         ));
         $this->cron->check_cron();
 
-    }
-
-    public function create_posttypes($post_types) {
-        $post_types[$this->post_type] = array(
-            'menu_icon' => 'dashicons-twitter',
-            'name' => __('Tweet', 'wpuimporttwitter'),
-            'plural' => __('Tweets', 'wpuimporttwitter'),
-            'female' => 0,
-            'taxonomies' => array('twitter_tag'),
-            'wputh__hide_front' => (isset($this->settings_values['hide_front']) && $this->settings_values['hide_front'] == '1')
-        );
-        return $post_types;
-    }
-
-    public function create_taxonomies($taxonomies) {
-        $taxonomies['twitter_tag'] = array(
-            'name' => __('Twitter tag', 'wpuimporttwitter'),
-            'plural' => __('Twitter tags', 'wpuimporttwitter'),
-            'post_type' => $this->post_type,
-            'hierarchical' => false,
-            'wputh__hide_front' => (isset($this->settings_values['hide_front']) && $this->settings_values['hide_front'] == '1'),
-            'admin_column' => true
-        );
-        return $taxonomies;
     }
 
     public function clean_old_posts() {

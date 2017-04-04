@@ -17,7 +17,6 @@ How to install :
 
 * Put this folder to your wp-content/plugins/ folder.
 * Activate the plugin in "Plugins" admin section.
-* Install & activate the plugin WPU Post types & taxonomies, required to add taxonomies https://github.com/WordPressUtilities/wpuposttypestaxos
 
 
 How to configure :
