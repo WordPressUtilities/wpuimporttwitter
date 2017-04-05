@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.11
+Version: 1.12
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -17,6 +17,7 @@ class WPUImportTwitter {
     private $log = false;
     private $messages = array();
     private $imported_tweets_ids = array();
+    public $transient_import = 'wpuimporttwitter_import_running';
     public $cronhook = 'wpuimporttwitter__cron_hook';
 
     public function __construct() {
@@ -52,6 +53,22 @@ class WPUImportTwitter {
 
     public function register_taxo_type() {
 
+        $labels = array(
+            'name' => _x('Tweets', 'post type general name', 'wpuimporttwitter'),
+            'singular_name' => _x('Tweet', 'post type singular name', 'wpuimporttwitter'),
+            'menu_name' => _x('Tweets', 'admin menu', 'wpuimporttwitter'),
+            'name_admin_bar' => _x('Tweet', 'add new on admin bar', 'wpuimporttwitter'),
+            'add_new_item' => __('Add New Tweet', 'wpuimporttwitter'),
+            'new_item' => __('New Tweet', 'wpuimporttwitter'),
+            'edit_item' => __('Edit Tweet', 'wpuimporttwitter'),
+            'view_item' => __('View Tweet', 'wpuimporttwitter'),
+            'all_items' => __('All Tweets', 'wpuimporttwitter'),
+            'search_items' => __('Search Tweets', 'wpuimporttwitter'),
+            'parent_item_colon' => __('Parent Tweets:', 'wpuimporttwitter'),
+            'not_found' => __('No tweets found.', 'wpuimporttwitter'),
+            'not_found_in_trash' => __('No tweets found in Trash.', 'wpuimporttwitter')
+        );
+
         /* Post type */
         register_post_type($this->post_type, apply_filters('wpuimporttwitter__post_type_infos', array(
             'public' => (!isset($this->settings_values['hide_front']) || $this->settings_values['hide_front'] != '1'),
@@ -59,6 +76,7 @@ class WPUImportTwitter {
             'show_ui' => true,
             'menu_icon' => 'dashicons-twitter',
             'name' => __('Tweet', 'wpuimporttwitter'),
+            'labels' => $labels,
             'taxonomies' => array('twitter_tag'),
             'supports' => array(
                 'title',
@@ -67,12 +85,32 @@ class WPUImportTwitter {
             )
         )));
 
+        $labels = array(
+            'name' => _x('Twitter tags', 'taxonomy general name', 'wpuimporttwitter'),
+            'singular_name' => _x('Twitter tag', 'taxonomy singular name', 'wpuimporttwitter'),
+            'search_items' => __('Search Twitter tags', 'wpuimporttwitter'),
+            'popular_items' => __('Popular Twitter tags', 'wpuimporttwitter'),
+            'all_items' => __('All Twitter tags', 'wpuimporttwitter'),
+            'parent_item' => null,
+            'parent_item_colon' => null,
+            'edit_item' => __('Edit Twitter Tag', 'wpuimporttwitter'),
+            'update_item' => __('Update Twitter Tag', 'wpuimporttwitter'),
+            'add_new_item' => __('Add New Twitter Tag', 'wpuimporttwitter'),
+            'new_item_name' => __('New Twitter Tag Name', 'wpuimporttwitter'),
+            'separate_items_with_commas' => __('Separate twitter tags with commas', 'wpuimporttwitter'),
+            'add_or_remove_items' => __('Add or remove twitter tags', 'wpuimporttwitter'),
+            'choose_from_most_used' => __('Choose from the most used twitter tags', 'wpuimporttwitter'),
+            'not_found' => __('No twitter tags found.', 'wpuimporttwitter'),
+            'menu_name' => __('Twitter tags', 'wpuimporttwitter')
+        );
+
         /* Taxonomy */
         register_taxonomy(
             'twitter_tag',
             $this->post_type,
             apply_filters('wpuimporttwitter__taxonomy_infos', array(
                 'label' => __('Twitter tags', 'wpuimporttwitter'),
+                'labels' => $labels,
                 'hierarchical' => false,
                 'show_admin_column' => true,
                 'show_in_nav_menus' => true,
@@ -294,8 +332,8 @@ class WPUImportTwitter {
         $settings = get_option($this->settings_details['option_id']);
 
         /* Set a transient  */
-        if (false === ($wpuimporttwitter_import_running = get_transient('wpuimporttwitter_import_running'))) {
-            set_transient('wpuimporttwitter_import_running', 1, 60 * 10);
+        if (false === ($wpuimporttwitter_import_running = get_transient($this->transient_import))) {
+            set_transient($this->transient_import, 1, 60 * 10);
         } else {
             $this->error_log('An import is already running');
             return;
@@ -340,7 +378,7 @@ class WPUImportTwitter {
         }
 
         /* Allow a new import */
-        delete_transient('wpuimporttwitter_import_running');
+        delete_transient($this->transient_import);
 
         return $imported_tweets;
     }
@@ -450,6 +488,8 @@ class WPUImportTwitter {
             'oauth_version' => '1.0'
         );
 
+        $request['tweet_mode'] = 'extended';
+
         $oauth = array_merge($oauth, $request);
 
         $base_info = $this->buildBaseString($twitter_url, 'GET', $oauth);
@@ -469,7 +509,8 @@ class WPUImportTwitter {
             CURLOPT_SSL_VERIFYPEER => false
         );
 
-        $debug_file = ABSPATH . '/tweets.txt';
+        $upload_dir = wp_upload_dir();
+        $debug_file = $upload_dir['baseurl'] . '/tweets.txt';
 
         $response = false;
         if ($this->use_debug_file && file_exists($debug_file)) {
@@ -518,30 +559,31 @@ class WPUImportTwitter {
     public function get_tweets_from_response($json_response) {
         $tweets = array();
         $response = json_decode($json_response);
+
         if (!is_object($response)) {
             return $response;
         }
         foreach ($response->statuses as $tweet) {
-            if (!isset($tweet->text)) {
+            if (!isset($tweet->full_text)) {
                 continue;
             }
 
             $name = $tweet->user->name;
             $screen_name = $tweet->user->screen_name;
-            $text = $tweet->text;
+            $text = $tweet->full_text;
             $original_name = $tweet->user->name;
             $original_screen_name = $tweet->user->screen_name;
-            $original_text = $tweet->text;
+            $original_text = $tweet->full_text;
             $is_retweet = isset($tweet->retweeted_status);
             if ($is_retweet) {
                 $original_name = $tweet->retweeted_status->user->name;
                 $original_screen_name = $tweet->retweeted_status->user->screen_name;
-                $original_text = $tweet->retweeted_status->text;
+                $original_text = $tweet->retweeted_status->full_text;
             }
 
             $tweets[$tweet->id_str] = array(
                 'id' => $tweet->id_str,
-                'text' => $tweet->text,
+                'text' => $tweet->full_text,
                 'name' => $name,
                 'screen_name' => $screen_name,
                 'time' => strtotime($tweet->created_at),
