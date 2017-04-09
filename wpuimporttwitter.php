@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.12
+Version: 1.12.1
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -23,6 +23,7 @@ class WPUImportTwitter {
     public function __construct() {
         $this->cron_interval = apply_filters('wpuimporttwitter_croninterval', 1800);
         $this->post_type = apply_filters('wpuimporttwitter_posttypehook', 'tweet');
+        $this->log = apply_filters('wpuimporttwitter_log', $this->log);
 
         add_action('plugins_loaded', array(&$this,
             'load_plugin_textdomain'
