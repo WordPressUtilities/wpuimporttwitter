@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.12.1
+Version: 1.12.2
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -337,6 +337,7 @@ class WPUImportTwitter {
             set_transient($this->transient_import, 1, 60 * 10);
         } else {
             $this->error_log('An import is already running');
+            $this->messages->set_message('import_already_running', __('An import is already running', 'wpuimporttwitter'), 'error');
             return;
         }
 
@@ -724,8 +725,13 @@ class WPUImportTwitter {
 
         // Hashtags
         if (!empty($entities->hashtags)) {
+            $hashtags = array();
             foreach ($entities->hashtags as $hashtag) {
-                $text = str_ireplace('#' . $hashtag->text, '<a class="twitter-hashtags" href="https://twitter.com/hashtag/' . $hashtag->text . '?src=hash">#' . $hashtag->text . '</a>', $text);
+                $hashtags[] = $hashtag->text;
+            }
+            usort($hashtags, array(&$this, 'sort_by_length'));
+            foreach ($hashtags as $hashtag) {
+                $text = str_ireplace('#' . $hashtag, '<a class="twitter-hashtags" href="https://twitter.com/hashtag/' . $hashtag . '?src=hash"><span>#</span>' . $hashtag . '</a>', $text);
             }
         }
 
@@ -960,6 +966,10 @@ class WPUImportTwitter {
     /* ----------------------------------------------------------
       Tools
     ---------------------------------------------------------- */
+
+    public function sort_by_length($a, $b) {
+        return strlen($b) - strlen($a);
+    }
 
     public function truncate_text($string, $length, $more = '...') {
         $_new_string = '';
