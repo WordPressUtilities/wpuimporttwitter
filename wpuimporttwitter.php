@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.12.2
+Version: 1.12.3
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -737,8 +737,9 @@ class WPUImportTwitter {
 
         // Users
         if (!empty($entities->user_mentions)) {
+            usort($entities->user_mentions, array(&$this, 'sort_by_length_screen_name'));
             foreach ($entities->user_mentions as $user_mention) {
-                $text = str_ireplace('@' . $user_mention->screen_name, '<a class="twitter-users" href="https://twitter.com/' . $user_mention->screen_name . '" title="' . esc_attr($user_mention->name) . '">@' . $user_mention->screen_name . '</a>', $text);
+                $text = str_ireplace('@' . $user_mention->screen_name, '<a class="twitter-users" href="https://twitter.com/' . $user_mention->screen_name . '" title="' . esc_attr($user_mention->name) . '"><span>@</span>' . $user_mention->screen_name . '</a>', $text);
             }
         }
 
@@ -969,6 +970,10 @@ class WPUImportTwitter {
 
     public function sort_by_length($a, $b) {
         return strlen($b) - strlen($a);
+    }
+
+    public function sort_by_length_screen_name($a, $b) {
+        return strlen($b->screen_name) - strlen($a->screen_name);
     }
 
     public function truncate_text($string, $length, $more = '...') {
