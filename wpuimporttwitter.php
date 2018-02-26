@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.12.3
+Version: 1.13.0
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -564,6 +564,23 @@ class WPUImportTwitter {
 
         if (!is_object($response)) {
             return $response;
+        }
+        if (!property_exists($response, 'statuses')) {
+            $this->error_log('No response available');
+            if (property_exists($response, 'errors')) {
+                foreach ($response->errors as $error) {
+                    $this->error_log('Error ' . $error->code . ' : ' . $error->message);
+                    $this->messages->set_message('twitter_api_error_' . $error->code, sprintf(__('Error #%s : "%s"'), $error->code, $error->message), 'error');
+                    /* Clear token settings if invalid values */
+                    if ($error->code == '89') {
+                        $settings = get_option($this->settings_details['option_id']);
+                        $settings['oauth_access_token'] = '';
+                        $settings['oauth_access_token_secret'] = '';
+                        update_option($this->settings_details['option_id'], $settings);
+                    }
+                }
+            }
+            return false;
         }
         foreach ($response->statuses as $tweet) {
             if (!isset($tweet->full_text)) {

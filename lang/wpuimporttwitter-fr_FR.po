@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: WPU Import Twitter\n"
-"POT-Creation-Date: 2018-01-23 15:27+0100\n"
+"POT-Creation-Date: 2018-02-26 18:14+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Darklg <darklg.blog@gmail.com>\n"
 "Language-Team: \n"
@@ -241,55 +241,60 @@ msgstr ""
 "Les sources sont invalides ou vides. Avez-vous suivi les règles sous le "
 "champ sources ?"
 
-#: .././wpuimporttwitter.php:764 .././wpuimporttwitter.php:772
-#: .././wpuimporttwitter.php:847
+#: .././wpuimporttwitter.php:573
+#, php-format
+msgid "Error #%s : \"%s\""
+msgstr "Erreur n°%s : \"%s\""
+
+#: .././wpuimporttwitter.php:780 .././wpuimporttwitter.php:788
+#: .././wpuimporttwitter.php:863
 msgid "Settings"
 msgstr "Réglages"
 
-#: .././wpuimporttwitter.php:772
+#: .././wpuimporttwitter.php:788
 msgid "Import settings"
 msgstr "Réglages d'import"
 
-#: .././wpuimporttwitter.php:785
+#: .././wpuimporttwitter.php:801
 #, php-format
 msgid "Imported tweets : %s"
 msgstr "Tweets importés : %s"
 
-#: .././wpuimporttwitter.php:787
+#: .././wpuimporttwitter.php:803
 msgid "No new imports"
 msgstr "Aucun nouvel import"
 
-#: .././wpuimporttwitter.php:796
+#: .././wpuimporttwitter.php:812
 msgid "The API works great !"
 msgstr "L'API fonctionne très bien !"
 
-#: .././wpuimporttwitter.php:798
+#: .././wpuimporttwitter.php:814
 msgid "The credentials seems invalid or the user never tweeted."
 msgstr ""
 "Les identifiants semblent incorrects ou l'utilisateur n'a jamais tweeté."
 
-#: .././wpuimporttwitter.php:816
+#: .././wpuimporttwitter.php:832
 msgid "Tools"
 msgstr "Outils"
 
-#: .././wpuimporttwitter.php:828
+#: .././wpuimporttwitter.php:844
 #, php-format
 msgid "Next automated import in %s’%s’’"
 msgstr "Prochain import automatique dans %s min et %ss"
 
-#: .././wpuimporttwitter.php:832
+#: .././wpuimporttwitter.php:848
 msgid "Import now"
 msgstr "Importer maintenant"
 
-#: .././wpuimporttwitter.php:834
+#: .././wpuimporttwitter.php:850
 msgid "Test API"
 msgstr "Tester l'API"
 
-#: .././wpuimporttwitter.php:840
+#: .././wpuimporttwitter.php:856
 msgid "You need correct IDs!"
 msgstr "Vous avez besoin d'identifiants !"
 
-#: .././wpuimporttwitter.php:841
+#: .././wpuimporttwitter.php:857
 #, php-format
 msgid ""
 "Please fill the IDs below or create <a target=\"_blank\" href=\"%s\">a "
@@ -298,35 +303,35 @@ msgstr ""
 "Merci de remplir les identifiants ci-dessous ou de créer <a target=\"_blank"
 "\" href=\"%s\">une application twitter</a>."
 
-#: .././wpuimporttwitter.php:851
+#: .././wpuimporttwitter.php:867
 msgid "Save Changes"
 msgstr "Sauvegarder les modifications"
 
-#: .././wpuimporttwitter.php:887
+#: .././wpuimporttwitter.php:903
 msgid "Tweet details"
 msgstr "Détails du Tweet"
 
-#: .././wpuimporttwitter.php:891
+#: .././wpuimporttwitter.php:907
 msgid "Original Tweet details"
 msgstr "Détails du tweet d'origine"
 
-#: .././wpuimporttwitter.php:900
+#: .././wpuimporttwitter.php:916
 msgid "Tweet author"
 msgstr "Auteur du Tweet"
 
-#: .././wpuimporttwitter.php:906
+#: .././wpuimporttwitter.php:922
 msgid "Tweet ID"
 msgstr "ID du Tweet"
 
-#: .././wpuimporttwitter.php:910
+#: .././wpuimporttwitter.php:926
 msgid "Original author"
 msgstr "Auteur d'origine"
 
-#: .././wpuimporttwitter.php:915
+#: .././wpuimporttwitter.php:931
 msgid "Original url"
 msgstr "URL d'origine"
 
-#: .././wpuimporttwitter.php:920
+#: .././wpuimporttwitter.php:936
 msgid "Original text"
 msgstr "Texte d'origine"
 
