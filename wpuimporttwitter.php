@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.13.0
+Version: 1.14.0
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -13,6 +13,7 @@ Required plugins: WPU Post Types & Taxos
 */
 
 class WPUImportTwitter {
+    private $plugin_version = '1.14.0';
     private $use_debug_file = false;
     private $log = false;
     private $messages = array();
@@ -196,6 +197,13 @@ class WPUImportTwitter {
         if (is_admin()) {
             include 'inc/WPUBaseMessages.php';
             $this->messages = new \wpuimporttwitter\WPUBaseMessages($this->options['plugin_id']);
+
+            include dirname( __FILE__ ) . '/inc/WPUBaseUpdate/WPUBaseUpdate.php';
+            $this->settings_update = new \wpuimporttwitter\WPUBaseUpdate(
+                'WordPressUtilities',
+                'wpuimporttwitter',
+                $this->plugin_version);
+
         }
         // Settings
         $this->settings_details = array(
@@ -708,26 +716,15 @@ class WPUImportTwitter {
             return;
         }
 
-        // Add required classes
-        require_once ABSPATH . 'wp-admin/includes/media.php';
-        require_once ABSPATH . 'wp-admin/includes/file.php';
-        require_once ABSPATH . 'wp-admin/includes/image.php';
-
         // Upload medias
+        $image = false;
         foreach ($medias as $media) {
-            $image = media_sideload_image($media, $post_id);
+            $image = $this->upload_to_post($media, $post_id);
         }
 
-        // then find the last image added to the post attachments
-        $attachments = get_posts(array(
-            'numberposts' => 1,
-            'post_parent' => $post_id,
-            'post_type' => 'attachment',
-            'post_mime_type' => 'image'
-        ));
-
-        if (sizeof($attachments) > 0) {
-            set_post_thumbnail($post_id, $attachments[0]->ID);
+        /* Set thumbnail */
+        if (is_numeric($image)) {
+            set_post_thumbnail($post_id, $image);
         }
     }
 
@@ -955,7 +952,7 @@ class WPUImportTwitter {
             }
             $display_value = '';
             foreach ($usernames as $username) {
-                $twitter_url = 'https://twitter.com/' . esc_attr($username['name']) . '/profile_image?size=normal';
+                $twitter_url = $this->get_profile_image($username['name'], $post_ID);
                 $url = admin_url('edit.php?post_type=' . $this->post_type . '&wpuimporttwitter_screen_name=' . esc_attr($username['name']));
                 $style = 'text-decoration:none;display:inline-block;font-size:0.9em;margin-right:5px';
                 $content = '<img width="48" height="48" style="margin-bottom:5px" src="' . $twitter_url . '" alt="" /><br />' . $username['name'];
@@ -967,6 +964,24 @@ class WPUImportTwitter {
             }
         }
         return $display_value;
+    }
+
+    public function get_profile_image($profile, $post_ID) {
+
+        $profile = esc_attr($profile);
+        $image = 'https://twitter.com/' . $profile . '/profile_image?size=normal&ext=.jpg';
+        $transient_id = 'wpuimporttwitter_avatar____' . $profile;
+        if (false === ($profile_image = get_transient($transient_id))) {
+            $img_id = $this->upload_to_post($image, $post_ID);
+            wp_update_post(array(
+                'ID' => $img_id,
+                'post_parent' => 0
+            ));
+            $profile_image = wp_get_attachment_image_url($img_id);
+            set_transient($transient_id, $profile_image, WEEK_IN_SECONDS);
+        }
+
+        return $profile_image;
     }
 
     public function filter_admin_results($query) {
@@ -984,6 +999,18 @@ class WPUImportTwitter {
     /* ----------------------------------------------------------
       Tools
     ---------------------------------------------------------- */
+
+    public function upload_to_post($url, $post_id, $type = 'id') {
+
+        // Add required classes
+        require_once ABSPATH . 'wp-admin/includes/media.php';
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+
+        $img_url = media_sideload_image($url, $post_id, '', $type);
+
+        return $img_url;
+    }
 
     public function sort_by_length($a, $b) {
         return strlen($b) - strlen($a);
