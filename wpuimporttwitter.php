@@ -3,7 +3,7 @@
 /*
 Plugin Name: WPU Import Twitter
 Plugin URI: https://github.com/WordPressUtilities/wpuimporttwitter
-Version: 1.14.0
+Version: 1.14.1
 Description: Twitter Import
 Author: Darklg
 Author URI: http://darklg.me/
@@ -13,7 +13,7 @@ Required plugins: WPU Post Types & Taxos
 */
 
 class WPUImportTwitter {
-    private $plugin_version = '1.14.0';
+    private $plugin_version = '1.14.1';
     private $use_debug_file = false;
     private $log = false;
     private $messages = array();
